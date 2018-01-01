@@ -4,26 +4,35 @@
 
 cluster* LSH(int dim, int ndata, double *data,
              int m, double **r, double *b, double w,
-             int *num_clusters, int **H)
+             int *num_clusters)
 {
-  int i, j, data_pt = -1;
+  int i, j, pt = -1, *pt_hash = malloc(m * sizeof(int));
   double *data_pt_vector = malloc(dim * sizeof(double));
 
+  cluster *clusters = malloc(sizeof(cluster));
+  clusters->cluster_hash = malloc(m * sizeof(int));
+  clusters->data_pts = malloc(sizeof(data_pt));
+  clusters->data_pts->d_pt = -1;
+  clusters->data_pts->next = NULL;
+  clusters->next = NULL;
+
   for(i = 0; i < ndata; i++) {
-    data_pt = i;
+    pt = i;
     for(j = 0; j < dim; j++) {
       data_pt_vector[j] = data[i * dim + j];
     }
 
-    hash_pt(dim, data_pt_vector, data_pt, m, r, b, w, H);
+    hash_pt(dim, data_pt_vector, m, r, b, w, pt_hash);
+
+    clusters = add_pt_to_cluster(clusters, pt, pt_hash, m, num_clusters);
   }
 
-  free(data_pt_vector);
+  free(data_pt_vector); free(pt_hash);
 
-  return form_clusters(ndata, m, H, num_clusters);
+  return clusters;
 }
 
-void hash_pt(int dim, double *data_pt_vector, int data_pt, int m, double **r, double *b, double w, int **H)
+void hash_pt(int dim, double *data_pt_vector, int m, double **r, double *b, double w, int *pt_hash)
 {
   int i, j;
   double *vector = malloc(dim * sizeof(double));
@@ -33,7 +42,7 @@ void hash_pt(int dim, double *data_pt_vector, int data_pt, int m, double **r, do
       vector[j] = r[i][j];
     }
 
-    H[data_pt][i] = (int) floor((dot_product(dim, data_pt_vector, vector) - b[i]) / w);
+    pt_hash[i] = (int) floor((dot_product(dim, data_pt_vector, vector) - b[i]) / w);
   }
 
   free(vector);
@@ -69,46 +78,31 @@ double dot_product(int dim, const double *vector_a, const double *vector_b)
   return result;
 }
 
-cluster* form_clusters(int ndata, int m, int **H, int *num_clusters)
-{
-  int i, j;
-  cluster *clusters = malloc(sizeof(cluster));
-
-  clusters->cluster_hash = malloc(m * sizeof(int));
-  for(j = 0; j < m; j++) {
-    clusters->cluster_hash[j] = H[0][j];
-  }
-  clusters->data_pts = malloc(sizeof(data_pt));
-  clusters->data_pts->data_pt = 0;
-  clusters->data_pts->next = NULL;
-  clusters->next = NULL;
-
-  for(i = 1; i < ndata; i++) {
-    clusters = compare_against_cluster_hash(i, m, H, clusters);
-  }
-
-  // print_clusters_info(m, clusters);
-  get_cluster_count(clusters, num_clusters);
-
-  return clusters;
-}
-
-cluster* compare_against_cluster_hash(int d_pt, int m, int **H, cluster *clusters)
+cluster* add_pt_to_cluster(cluster* clusters, int pt, int *pt_hash, int m, int *num_clusters)
 {
   int j, k;
   bool matching_hash = true;
-  cluster *current_cluster = clusters;
+  cluster* current_cluster = clusters;
+
+  if(pt == 0) { // First point, create first cluster with pt_hash for pt and add pt to cluster data_pts.
+    for(j = 0; j < m; j++) {
+      clusters->cluster_hash[j] = pt_hash[j];
+    }
+    clusters->data_pts->d_pt = pt;
+
+    return clusters;
+  }
 
   while(current_cluster != NULL) {
     for(j = 0; j < m; j++) {
-      if(H[d_pt][j] != current_cluster->cluster_hash[j]) {
+      if(pt_hash[j] != current_cluster->cluster_hash[j]) {
         matching_hash = false;
       }
     }
 
     if(matching_hash) {
       data_pt *new_data_pt = malloc(sizeof(data_pt));
-      new_data_pt->data_pt = d_pt;
+      new_data_pt->d_pt = pt;
       new_data_pt->next = current_cluster->data_pts;
 
       current_cluster->data_pts = new_data_pt;
@@ -122,14 +116,16 @@ cluster* compare_against_cluster_hash(int d_pt, int m, int **H, cluster *cluster
         cluster* new_cluster = malloc(sizeof(cluster));
         new_cluster->cluster_hash = malloc(m * sizeof(int));
         for(k = 0; k < m; k++) {
-          new_cluster->cluster_hash[k] = H[d_pt][k];
+          new_cluster->cluster_hash[k] = pt_hash[k];
         }
         new_cluster->data_pts = malloc(sizeof(data_pt));
-        new_cluster->data_pts->data_pt = d_pt;
+        new_cluster->data_pts->d_pt = pt;
         new_cluster->data_pts->next = NULL;
         new_cluster->next = NULL;
 
         last_cluster->next = new_cluster;
+
+        *num_clusters = *num_clusters + 1;
 
         return clusters;
       }
@@ -163,7 +159,7 @@ void search_clusters_for_apprx_neighbors(int dim, double *train_features, int *t
       int neighbor_data_pt = -1, closest_neighbor_pt = -1;
       data_pt *neighbors = current_cluster->data_pts;
       while(neighbors != NULL) {
-        neighbor_data_pt = neighbors->data_pt;
+        neighbor_data_pt = neighbors->d_pt;
 
         distance = calc_dist_to_neighbor(dim, train_features, q_pt, neighbor_data_pt);
         if(distance < closest_neighbor_dist) {
@@ -196,7 +192,7 @@ double calc_dist_to_neighbor(int dim, double *data, double *q_pt, int neighbor_d
   int i;
   double distance = 0.0;
   for(i = 0; i < dim; i++) {
-    distance += (q_pt[i] - data[neighbor_data_pt*dim+i]) * (q_pt[i] - data[neighbor_data_pt*dim+i]);
+    distance += (q_pt[i] - data[neighbor_data_pt * dim + i]) * (q_pt[i] - data[neighbor_data_pt * dim + i]);
   }
 
   return sqrt(distance);
@@ -236,7 +232,7 @@ void print_clusters_info(int m, cluster *clusters)
     printf("\nCluster points\t=\t");
 
     while(data_pts != NULL) {
-      printf("%d\t", data_pts->data_pt);
+      printf("%d\t", data_pts->d_pt);
       data_pts = data_pts->next;
     }
 
@@ -248,18 +244,6 @@ void print_clusters_info(int m, cluster *clusters)
   }
 
   printf("\nTotal cluster count = %d\n\n", cluster_count);
-}
-
-void get_cluster_count(cluster *clusters, int *num_clusters)
-{
-  int cluster_count = 0;
-  cluster *current_cluster = clusters;
-  while(current_cluster != NULL) {
-    cluster_count++;
-    current_cluster = current_cluster->next;
-  }
-
-  *num_clusters = cluster_count;
 }
 
 void read_binary_dataset(char *path, int size, int *labels, double *features)

@@ -145,8 +145,8 @@ void execute_kmeans(int *train_labels, double *train_features, int *test_labels,
 }
 
 void execute_LSH(int *train_labels, double *train_features, int *test_labels, double *test_features) {
-  int dim = FEATURE_DIM, ndata = TRAIN_SIZE, m = 3, i, j;
-  int *num_clusters = &i; int correct_labeling_count = 0;
+  int dim = FEATURE_DIM, ndata = TRAIN_SIZE, m = 3, i, j, z = 0;
+  int *num_clusters = &z; int correct_labeling_count = 0;
   double w = 7;
 
   double *b = malloc(m * sizeof(double));
@@ -165,13 +165,8 @@ void execute_LSH(int *train_labels, double *train_features, int *test_labels, do
     }
   }
 
-  int **H = malloc(ndata * sizeof(int *));
-  for(i = 0; i < ndata; i++) {
-    H[i] = malloc(m * sizeof(int));
-  }
-
   printf("\nGenerating clusters via LSH...\n");
-  cluster *clusters = LSH(dim, ndata, train_features, m, r, b, w, num_clusters, H);
+  cluster *clusters = LSH(dim, ndata, train_features, m, r, b, w, num_clusters);
 
   printf("\nTotal cluster count = %d\n\n", *num_clusters);
 

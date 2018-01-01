@@ -5,7 +5,7 @@
  * Structure used for the data points in a cluster.
  */
 typedef struct data_pt {
-    int data_pt;
+    int d_pt;
     struct data_pt *next;
 } data_pt;
 
@@ -19,17 +19,17 @@ typedef struct cluster {
 } cluster;
 
 /**
- * Hash ndata points of data and form/return clusters accordingly.
+ * Hash ndata points of data and form clusters accordingly.
  */
 cluster* LSH(int dim, int ndata, double *data,
              int m, double **r, double *b, double w,
-             int *num_clusters, int **H);
+             int *num_clusters);
 
 /**
- * Hash data_pt of dimensions dim using Gaussian distribution r. Store the result in H[data_pt][i]
+ * Hash data_pt_vector of dim dimensions using Gaussian distribution r. Store the result in pt_hash[i],
  * where 0 <= i < m.
  */
-void hash_pt(int dim, double *data_pt_vector, int data_pt, int m, double **r, double *b, double w, int **H);
+void hash_pt(int dim, double *data_pt_vector, int m, double **r, double *b, double w, int *pt_hash);
 
 /**
  * Return the hash of q_pt_vector using Gaussian distribution r.
@@ -42,15 +42,10 @@ int* hash_q_pt(int dim, double *q_pt_vector, int m, double **r, double *b, doubl
 double dot_product(int dim, const double *vector_a, const double *vector_b);
 
 /**
- * Form and return the clusters from hash table H. Get the cluster count and store in num_clusters.
+ * Add pt to clusters using pt_hash. Create new cluster and increment num_clusters when pt_hash does not match
+ * any of the hashes in clusters. Otherwise, add data_pt to matching cluster hash.
  */
-cluster* form_clusters(int ndata, int m, int **H, int *num_clusters);
-
-/**
- * Search hash table H a determine if H[d_pt] matches a cluster hash in clusters. If there is a match, add d_pt to
- * the cluster. If there is no match of hashes in clusters, create a new cluster and add d_pt to the cluster.
- */
-cluster* compare_against_cluster_hash(int d_pt, int m, int **H, cluster *clusters);
+cluster* add_pt_to_cluster(cluster* clusters, int pt, int *pt_hash, int m, int *num_clusters);
 
 /**
  * Search clusters for a matching hash of q_pt_hash. If there is a match, calculate the distance of the closest
@@ -75,11 +70,6 @@ double gauss_rand();
  * Print the cluster information of clusters. Used for debugging purposes only.
  */
 void print_clusters_info(int m, cluster *clusters);
-
-/**
- * Store the cluster count of clusters in num_clusters.
- */
-void get_cluster_count(cluster *clusters, int *num_clusters);
 
 /**
  * Read the binary data set. In this case, reading the features and labels.
