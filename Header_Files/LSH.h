@@ -1,5 +1,5 @@
-#ifndef MNIST_KDTREE_KMEANS_LSH_LSH_H
-#define MNIST_KDTREE_KMEANS_LSH_LSH_H
+#ifndef LSH_H
+#define LSH_H
 
 /**
  * Structure used for the data points in a cluster.
@@ -71,14 +71,4 @@ double gauss_rand();
  */
 void print_clusters_info(int m, cluster *clusters);
 
-/**
- * Read the binary data set. In this case, reading the features and labels.
- */
-void read_binary_dataset(char *path, int size, int *labels, double *features);
-
-/**
- * Normalize ndata*feature_dimensions values in data.
- */
-void normalize_data(double *data, int feature_dimensions, int ndata);
-
-#endif //MNIST_KDTREE_KMEANS_LSH_LSH_H
+#endif //LSH_H

@@ -245,37 +245,3 @@ void print_clusters_info(int m, cluster *clusters)
 
   printf("\nTotal cluster count = %d\n\n", cluster_count);
 }
-
-void read_binary_dataset(char *path, int size, int *labels, double *features)
-{
-  FILE* file = fopen(path, "rb");
-
-  if(file == NULL) {
-    perror("Error");
-    exit(1);
-  }
-
-  double label = -1.0;
-
-  int i;
-  for (i = 0; i < size; i++) {
-    // Read the label
-    fread(&label, sizeof(double), 1, file);
-    labels[i] = (int)label;
-
-    // Read the features
-    fread(&features[i * FEATURE_DIM], sizeof(double), FEATURE_DIM, file);
-  }
-
-  fclose(file);
-}
-
-void normalize_data(double *data, int feature_dimensions, int ndata)
-{
-  int i;
-  for(i = 0; i < ndata*feature_dimensions; i++) {
-    data[i] = (data[i] - FEATURE_MIN_VALUE) / (FEATURE_MAX_VALUE - FEATURE_MIN_VALUE);
-  }
-}
-
-

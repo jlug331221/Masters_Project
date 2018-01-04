@@ -1,5 +1,5 @@
-#ifndef MNIST_KDTREE_KMEANS_LSH_KMEANS_H
-#define MNIST_KDTREE_KMEANS_LSH_KMEANS_H
+#ifndef KMEANS_H
+#define KMEANS_H
 
 /**
  * Performs clustering of data using K means algorithm.
@@ -110,4 +110,4 @@ void search_clusters(int dim, int ndata, double *train_features, int *train_labe
 int kmeans_searchPointsInCluster(int dim, double *query, double *data, int closestClusterIndex,
                                  int *cluster_start, int *cluster_size);
 
-#endif //MNIST_KDTREE_KMEANS_LSH_KMEANS_H
+#endif //KMEANS_H

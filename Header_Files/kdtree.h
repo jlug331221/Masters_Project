@@ -1,5 +1,5 @@
-#ifndef MNIST_KDTREE_KMEANS_LSH_KDTREE_H
-#define MNIST_KDTREE_KMEANS_LSH_KDTREE_H
+#ifndef KDTREE_H
+#define KDTREE_H
 
 /**
  * Builds a kd-tree of k clusters given the initial data set data.
@@ -71,4 +71,4 @@ double calcMean(int currDim, int totalDim, int start, int end, double *data);
 double calcVariance(int currDim, int totalDim, int start, int end, double *data,
                     double dimMean);
 
-#endif //MNIST_KDTREE_KMEANS_LSH_KDTREE_H
+#endif //KDTREE_H
