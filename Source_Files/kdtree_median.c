@@ -59,7 +59,6 @@ double calc_median(int size, double *data, int *cluster_assign)
     else {;}
   }
 
-
   if( size0+size1+1 < size2 ) {
     end_pt0 = 0.0;
     for(i=size0; i<size; i++) end_pt0 += data[i];
@@ -91,7 +90,7 @@ double calc_median(int size, double *data, int *cluster_assign)
       else {cluster_assign[i] = 1 ; size1++ ;}
     }
     if((size0+size1+size2)!=size) {
-      printf("Error in sizes, %d, %d, %d, %d\n", size0, size1,size2, size);
+      printf("Error in sizes, %d, %d, %d, %d\n", size0, size1, size2, size);
       return 0 ;
     }
 
@@ -202,14 +201,14 @@ int kdtree_hybrid(int dim, int ndata, double *data, int kk,
            int *cluster_assign, double *datum, double *buf)
 /* buf size: buf[ndata]     */
 {
-  int    i0, im, i, j, k, k_chosen, level, width, level_kid, width_kid,
+  int i0, im, i, j, k, k_chosen, level, width, level_kid, width_kid,
       start[2], size[2] ;
   double tmp, dist_max, dist,  *bdry[2], *centroid[2] ;
 
   bdry[0] = (double *)calloc((2*dim), sizeof(double));
   bdry[1] = (double *)calloc((2*dim), sizeof(double));
-  centroid[0] = (double *) calloc((dim),  sizeof(double)) ;
-  centroid[1] = (double *) calloc((dim),  sizeof(double)) ;
+  centroid[0] = (double *) calloc((dim),  sizeof(double));
+  centroid[1] = (double *) calloc((dim),  sizeof(double));
 
   for(j=0; j<dim; j++) {
     centroid[0][j] = 0.0 ;
@@ -222,7 +221,7 @@ int kdtree_hybrid(int dim, int ndata, double *data, int kk,
 
   i0 = 0 ;
   im = ndata ;
-  bipartition_median(dim, i0, im, data,    start, size, bdry, centroid,
+  bipartition_median(dim, i0, im, data, start, size, bdry, centroid,
                      cluster_assign, datum, buf);
   cluster_start[0]= start[0];   cluster_start[kk/2]= start[1];
   cluster_size[0] = size[0] ;   cluster_size[kk/2] = size[1] ;

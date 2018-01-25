@@ -1,7 +1,3 @@
-//
-// Created by JLug on 2017-12-26.
-//
-
 #ifndef MNIST_KDTREE_KMEANS_LSH_DEFS_H
 #define MNIST_KDTREE_KMEANS_LSH_DEFS_H
 
@@ -10,7 +6,7 @@
 #define TINY_DELTA        1.0e-05
 
 #define FEATURE_DIM       784
-#define LABEL_DIM 1
+#define LABEL_DIM         1
 #define FEATURE_MIN_VALUE 0
 #define FEATURE_MAX_VALUE 255
 #define TRAIN_SIZE        60000

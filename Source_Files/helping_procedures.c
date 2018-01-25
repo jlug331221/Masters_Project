@@ -1,11 +1,35 @@
 #include "../Header_Files/Headers.h"
 #include "../Header_Files/Defs.h"
 #include "../Header_Files/helping_procedures.h"
-#include "../Header_Files/LSH.h"
 #include "../Header_Files/kdtree.h"
 #include "../Header_Files/kmeans.h"
-#include "../Header_Files/bkmeans.h"
+#include "../Header_Files/LSH.h"
 #include "../Header_Files/kdtree_median.h"
+#include "../Header_Files/bkmeans.h"
+
+double randMToN(double M, double N){
+  return M + (rand() / ( RAND_MAX / (N-M) ) ) ;
+}
+
+void writeResults(int dim, int ndata, double* data, int* cluster_assign)
+{
+  int i;
+  FILE* file;
+
+  file = fopen("data.txt", "w");
+  fprintf(file, "%d\n", dim);
+  fprintf(file, "%d\n", ndata);
+
+  for (i = 0; i < dim * ndata; i++) {
+    fprintf(file, "%lf\n", data[i]);
+  }
+
+  for (i = 0; i < ndata; i++) {
+    fprintf(file, "%d\n", cluster_assign[i]);
+  }
+
+  fclose(file);
+}
 
 void execute_kdtree(int *train_labels, double *train_features, int *test_labels, double *test_features)
 {
@@ -49,7 +73,7 @@ void execute_kdtree(int *train_labels, double *train_features, int *test_labels,
   }
 
   printf("\nBuilding KDTree...\n");
-  kdtree(dim, TRAIN_SIZE, train_features, train_labels, k,
+  kdtree(dim, ndata, train_features, train_labels, k,
          cluster_size, cluster_start, cluster_bdry,
          cluster_centroid, cluster_assign);
 
@@ -66,7 +90,7 @@ void execute_kdtree(int *train_labels, double *train_features, int *test_labels,
 
     h = 0;
 
-    search_kdtree(dim, TRAIN_SIZE, train_features, train_labels, test_labels,
+    search_kdtree(dim, ndata, train_features, train_labels, test_labels,
                   k, i, cluster_size, cluster_start, cluster_bdry,
                   query, &correct_labeling_count);
 
@@ -188,6 +212,142 @@ void execute_LSH(int *train_labels, double *train_features, int *test_labels, do
   }
 
   printf("Accuracy of labeling = %.2f%%\n", ((double) correct_labeling_count / (double) TEST_SIZE) * 100);
+}
+
+void execute_kdtree_median(int *train_labels, double *train_features, int *test_labels, double *test_features)
+{
+  int ndata = 32, dim = 2, kk = 2, i, j;
+
+  double *data = malloc(ndata * dim * sizeof(double));
+  for(i = 0; i < ndata * dim; i++) {
+    data[i] = randMToN(0, 100);
+  }
+
+  int *cluster_assign = malloc(ndata * sizeof(cluster_assign));
+  int *cluster_size = malloc(kk * sizeof(cluster_size));
+  int *cluster_start = malloc(kk * sizeof(cluster_start));
+
+  // Initialize cluster assignments
+  for(i = 0; i < ndata; i++) {
+    cluster_assign[i] = -1;
+  }
+
+  // Initialize cluster start and cluster size
+  for(i = 0; i < kk; i++) {
+    cluster_size[i] = 0;
+    cluster_start[i] = 0;
+  }
+
+  double **cluster_bdry = malloc(kk * sizeof(double*));
+  double **cluster_centroid = malloc(kk * sizeof(double*));
+  for(i = 0; i < kk; i++) {
+    cluster_bdry[i] = malloc((dim*2) * sizeof(double));
+    cluster_centroid[i] = malloc(dim * sizeof(double));
+  }
+
+  // Initialize cluster boundaries
+  for(i = 0; i < kk; i++) {
+    for(j = 0; j < dim*2; j++) {
+      if(j % 2 == 0) { cluster_bdry[i][j] = (double) INT_MAX; }
+      else { cluster_bdry[i][j] = (double) INT_MIN; }
+    }
+  }
+
+  // Initialize cluster centroids
+  for(i = 0; i < kk; i++) {
+    for(j = 0; j < dim; j++) {
+      cluster_centroid[i][j] = 0.0;
+    }
+  }
+
+  double *buf = malloc(ndata * sizeof(double));
+  double *datum = malloc(dim * sizeof(double));
+
+  printf("\nBuilding KDTree Hybrid (median)...\n");
+  kdtree_hybrid(dim, ndata, data, kk,
+                cluster_start, cluster_size,
+                cluster_bdry, cluster_centroid,
+                cluster_assign, datum, buf);
+
+  writeResults(dim, ndata, data, cluster_assign);
+
+//  printf("\nPerforming searches...\n");
+//
+//  double *query = malloc(dim * sizeof(double));
+//  double *result_pt = malloc(dim * sizeof(double));
+//
+//  int h = 0, pts_searched;
+//  for(i = 0; i < TEST_SIZE; i++) {
+//    pts_searched = 0;
+//
+//    for(j = i * FEATURE_DIM; j < i * FEATURE_DIM + FEATURE_DIM; j++) {
+//      query[h] = test_features[j];
+//      h++;
+//    }
+//
+//    h = 0;
+//
+//    pts_searched = search_kdtree_hybrid(dim, ndata, train_features, kk,
+//                                        cluster_start, cluster_size, cluster_bdry,
+//                                        query, result_pt);
+//
+//    //if(i == 999 || i == 1999 || i == 2999 || i == 3999 || i == 4999) {
+//    printf("%d.\tpoints searched = %d\n", i+1, pts_searched);
+//    //}
+//
+//    free(query);
+//    free(result_pt);
+//    query = malloc(dim * sizeof(double));
+//    result_pt = malloc(dim * sizeof(double));
+//  }
+
+  printf("\n");
+}
+
+void execute_bkmeans(int *train_labels, double *train_features, int *test_labels, double *test_features)
+{
+  int ndata = 1000, dim = 2, kk = 32, i, num_clusters = 0;
+
+  double *data = malloc(ndata * dim * sizeof(double));
+  for(i = 0; i < ndata * dim; i++) {
+    data[i] = randMToN(0, 100);
+  }
+
+  int *cluster_size = malloc(kk * sizeof(double));
+  int *cluster_start = malloc(kk * sizeof(double));
+  int *cluster_assign = malloc(ndata * sizeof(double));
+
+  // Initialize cluster assignments
+  for(i = 0; i < ndata; i++) {
+    cluster_assign[i] = -1;
+  }
+
+  // Initialize cluster start and cluster size
+  for(i = 0; i < kk; i++) {
+    cluster_start[i] = 0;
+    cluster_size[i] = 0;
+  }
+
+  double *cluster_radius = malloc(kk * sizeof(double));
+  double *cluster_center = malloc(kk * sizeof(double));
+  for(i = 0; i < kk; i++) {
+    cluster_center[i] = 0.0;
+    cluster_radius[i] = 0.0;
+  }
+
+  double *datum = malloc(dim * sizeof(double));
+
+  double *cluster_ssd = malloc(kk * sizeof(double));
+
+  printf("\nForming clusters...\n\n");
+  num_clusters = bkmeans(5, kk, dim, ndata, 0, ndata, data,
+                         cluster_assign, datum,
+                         cluster_center, cluster_radius,
+                         cluster_start, cluster_size, cluster_ssd);
+
+  writeResults(dim, ndata, data, cluster_assign);
+
+  printf("Number of clusters = %d\n", num_clusters);
 }
 
 void read_binary_dataset(char *path, int size, int *labels, double *features)

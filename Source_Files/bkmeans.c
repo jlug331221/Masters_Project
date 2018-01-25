@@ -110,7 +110,7 @@ int bkmeans(int iterat_limit, int kk, int dim, int ndata, int i0_in, int im_in, 
             double *cluster_center, double *cluster_radius,
             int *cluster_start, int *cluster_size, double *cluster_ssd)
 {
-  int    i, j, k, k_max, nclusters, start[2], size[2] ;
+  int i, j, k, k_max, nclusters, start[2], size[2] ;
   double tmp, dist_max, dist, ssd_initial, ssd[2],
       *center, *radius_pt, *cluster_center0, *cluster_radius_pt ;
 
