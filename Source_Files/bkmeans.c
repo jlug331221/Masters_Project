@@ -1,5 +1,4 @@
 #include "../Header_Files/Headers.h"
-#include "../Header_Files/Defs.h"
 #include "../Header_Files/bkmeans.h"
 
 double calc_dist_square(int dim, double *datum1, double *datum2)

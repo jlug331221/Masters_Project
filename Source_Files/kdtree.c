@@ -1,5 +1,4 @@
 #include "../Header_Files/Headers.h"
-#include "../Header_Files/Defs.h"
 #include "../Header_Files/kdtree.h"
 
 int kdtree(int dim, int ndata, double *data, int *labels, int k,

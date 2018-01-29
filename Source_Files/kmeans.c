@@ -1,5 +1,4 @@
 #include "../Header_Files/Headers.h"
-#include "../Header_Files/Defs.h"
 #include "../Header_Files/kmeans.h"
 
 int kmeans(int dim, int ndata, double *data, int *labels,

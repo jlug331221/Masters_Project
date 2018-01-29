@@ -6,6 +6,7 @@
 #include "../Header_Files/LSH.h"
 #include "../Header_Files/kdtree_median.h"
 #include "../Header_Files/bkmeans.h"
+#include "../Header_Files/bisecting_kmeans.h"
 
 double randMToN(double M, double N){
   return M + (rand() / ( RAND_MAX / (N-M) ) ) ;
@@ -304,6 +305,9 @@ void execute_kdtree_median(int *train_labels, double *train_features, int *test_
   printf("\n");
 }
 
+/**
+ * Dr. Zhuang's implementation of bisecting-Kmeans
+ */
 void execute_bkmeans(int *train_labels, double *train_features, int *test_labels, double *test_features)
 {
   int ndata = 50000, dim = 2, kk = 512, i, num_clusters = 0;
@@ -380,6 +384,55 @@ void execute_bkmeans(int *train_labels, double *train_features, int *test_labels
 //  }
 //
 //  printf("\n");
+}
+
+/**
+ * My implementation of bisecting-Kmeans
+ */
+void execute_bisecting_kmeans(int *train_labels, double * train_features, int *test_labels, double *test_features)
+{
+  int ndata = 60000, dim = 2, k = 512, i, j;
+
+  double *data = malloc(dim * ndata * sizeof(double));
+  for(i = 0; i < dim * ndata; i++) {
+    data[i] = randMToN(0, 100);
+  }
+
+  int *cluster_size = malloc(k * sizeof(double));
+  int *cluster_start = malloc(k * sizeof(double));
+  int *cluster_assign = malloc(ndata * sizeof(double));
+
+  // Initialize cluster assignments
+  for(i = 0; i < ndata; i++) {
+    cluster_assign[i] = -1;
+  }
+
+  // Initialize cluster start
+  for(i = 0; i < k; i++) {
+    cluster_start[i] = 0;
+  }
+
+  double *cluster_radius = malloc(k * sizeof(double));
+  double **cluster_centroid = malloc(k * sizeof(double *));
+  for(i = 0; i < k; i++) {
+    cluster_centroid[i] = malloc(dim * sizeof(double));
+    cluster_radius[i] = 0.0;
+  }
+
+  // Initialize cluster centroids
+  for(i = 0; i < k; i++) {
+    for(j = 0; j < dim; j++) {
+      cluster_centroid[i][j] = 0.0;
+    }
+  }
+
+  printf("\nForming %d clusters via bisecting K-means...\n", k);
+  int numIterations = bisecting_kmeans(dim, ndata, data, k, cluster_size, cluster_start,
+                                       cluster_radius, cluster_centroid, cluster_assign);
+
+  printf("\nNumber of iterations for bisecting K-means clustering = %d\n", numIterations);
+
+  writeResults(dim, ndata, data, cluster_assign);
 }
 
 void read_binary_dataset(char *path, int size, int *labels, double *features)
