@@ -110,7 +110,7 @@ int bkmeans(int iterat_limit, int kk, int dim, int ndata, int i0_in, int im_in, 
             double *cluster_center, double *cluster_radius,
             int *cluster_start, int *cluster_size, double *cluster_ssd)
 {
-  int i, j, k, k_max, nclusters, start[2], size[2] ;
+  int i, i0, im, j, k, k_max, nclusters, start[2], size[2] ;
   double tmp, dist_max, dist, ssd_initial, ssd[2],
       *center, *radius_pt, *cluster_center0, *cluster_radius_pt ;
 
@@ -153,8 +153,8 @@ int bkmeans(int iterat_limit, int kk, int dim, int ndata, int i0_in, int im_in, 
     }
 
     /*** Split the cluster into 2 clusters ***/
-    i0_in = cluster_start[k_max];
-    im_in = i0_in + cluster_size[k_max];
+    i0 = cluster_start[k_max];
+    im = i0_in + cluster_size[k_max];
     for(j=0;j<dim;j++) radius_pt[j]= cluster_radius_pt[k_max*dim+j] ;
     for(j=0;j<dim;j++) center[j]   = cluster_center[k_max*dim+j] ;
     two_means(iterat_limit, dim, i0_in, im_in, data,
@@ -201,7 +201,8 @@ int kmeans_z(int iterat_limit, int kk, int dim, int i0, int im, double *data,
              int *cluster_assign, double *datum, double *cluster_center0,
              double *radius_pt, double *cluster_center, double *cluster_radius,
              int *cluster_start, int *cluster_size, double *cluster_ssd)
-{  int i, j, k, k_max, iterations, membership, start0, end0, start1, end1,
+{
+  int i, j, k, k_max, iterations, membership, start0, end0, start1, end1,
       position, change, *cluster_size0, *radius_index, k_max_used, nclusters ;
   double  tmp, dist_min ;
 

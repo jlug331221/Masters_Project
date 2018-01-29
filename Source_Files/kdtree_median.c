@@ -232,7 +232,7 @@ int kdtree_hybrid(int dim, int ndata, double *data, int kk,
 
   level = 2;         width=kk/level;
   level_kid=2*level; width_kid = kk/level_kid ;
-  while( level < kk/16 ) {
+  while( level < kk ) {
     for(k_chosen=0; k_chosen<kk; k_chosen+=width) {
       k=k_chosen;
       i0 = cluster_start[k_chosen];

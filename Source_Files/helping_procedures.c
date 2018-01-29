@@ -216,7 +216,7 @@ void execute_LSH(int *train_labels, double *train_features, int *test_labels, do
 
 void execute_kdtree_median(int *train_labels, double *train_features, int *test_labels, double *test_features)
 {
-  int ndata = 32, dim = 2, kk = 2, i, j;
+  int ndata = 1000, dim = 2, kk = 16, i, j;
 
   double *data = malloc(ndata * dim * sizeof(double));
   for(i = 0; i < ndata * dim; i++) {
@@ -263,7 +263,7 @@ void execute_kdtree_median(int *train_labels, double *train_features, int *test_
   double *buf = malloc(ndata * sizeof(double));
   double *datum = malloc(dim * sizeof(double));
 
-  printf("\nBuilding KDTree Hybrid (median)...\n");
+  printf("\nBuilding KDTree (median)...\n");
   kdtree_hybrid(dim, ndata, data, kk,
                 cluster_start, cluster_size,
                 cluster_bdry, cluster_centroid,
@@ -306,7 +306,7 @@ void execute_kdtree_median(int *train_labels, double *train_features, int *test_
 
 void execute_bkmeans(int *train_labels, double *train_features, int *test_labels, double *test_features)
 {
-  int ndata = 1000, dim = 2, kk = 32, i, num_clusters = 0;
+  int ndata = 50000, dim = 2, kk = 512, i, num_clusters = 0;
 
   double *data = malloc(ndata * dim * sizeof(double));
   for(i = 0; i < ndata * dim; i++) {
@@ -339,8 +339,8 @@ void execute_bkmeans(int *train_labels, double *train_features, int *test_labels
 
   double *cluster_ssd = malloc(kk * sizeof(double));
 
-  printf("\nForming clusters...\n\n");
-  num_clusters = bkmeans(5, kk, dim, ndata, 0, ndata, data,
+  printf("\nForming clusters via bisecting-kmeans...\n\n");
+  num_clusters = bkmeans(10, kk, dim, ndata, 0, ndata, data,
                          cluster_assign, datum,
                          cluster_center, cluster_radius,
                          cluster_start, cluster_size, cluster_ssd);
@@ -348,6 +348,38 @@ void execute_bkmeans(int *train_labels, double *train_features, int *test_labels
   writeResults(dim, ndata, data, cluster_assign);
 
   printf("Number of clusters = %d\n", num_clusters);
+
+  //  printf("\nPerforming searches...\n");
+//
+//  double *query = malloc(dim * sizeof(double));
+//  double *result_pt = malloc(dim * sizeof(double));
+//
+//  int h = 0, pts_searched;
+//  for(i = 0; i < TEST_SIZE; i++) {
+//    pts_searched = 0;
+//
+//    for(j = i * FEATURE_DIM; j < i * FEATURE_DIM + FEATURE_DIM; j++) {
+//      query[h] = test_features[j];
+//      h++;
+//    }
+//
+//    h = 0;
+//
+//    pts_searched = search_kdtree_hybrid(dim, ndata, train_features, kk,
+//                                        cluster_start, cluster_size, cluster_bdry,
+//                                        query, result_pt);
+//
+//    //if(i == 999 || i == 1999 || i == 2999 || i == 3999 || i == 4999) {
+//    printf("%d.\tpoints searched = %d\n", i+1, pts_searched);
+//    //}
+//
+//    free(query);
+//    free(result_pt);
+//    query = malloc(dim * sizeof(double));
+//    result_pt = malloc(dim * sizeof(double));
+//  }
+//
+//  printf("\n");
 }
 
 void read_binary_dataset(char *path, int size, int *labels, double *features)
