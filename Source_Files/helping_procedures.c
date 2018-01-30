@@ -136,7 +136,7 @@ void execute_kmeans(int *train_labels, double *train_features, int *test_labels,
   }
 
   printf("\nForming %d clusters using K-means...\n", k);
-  int numIterations = kmeans(dim, TRAIN_SIZE, train_features, train_labels,
+  int numIterations = kmeans(dim, ndata, train_features, train_labels,
                              k, cluster_size, cluster_start, cluster_radius,
                              cluster_centroid, cluster_assign, thresh_hold);
   printf("Number of iterations for K-means clustering = %d\n", numIterations);
@@ -389,50 +389,74 @@ void execute_bkmeans(int *train_labels, double *train_features, int *test_labels
 /**
  * My implementation of bisecting-Kmeans
  */
-void execute_bisecting_kmeans(int *train_labels, double * train_features, int *test_labels, double *test_features)
+void execute_bisecting_kmeans(int *train_labels, double *train_features, int *test_labels, double *test_features)
 {
-  int ndata = 60000, dim = 2, k = 512, i, j;
+  int ndata = TRAIN_SIZE, dim = FEATURE_DIM, k = 355, i, j, correct_labeling_count = 0;
 
-  double *data = malloc(dim * ndata * sizeof(double));
-  for(i = 0; i < dim * ndata; i++) {
-    data[i] = randMToN(0, 100);
-  }
+//  double *data = malloc(dim * ndata * sizeof(double));
+//  for(i = 0; i < dim * ndata; i++) {
+//    data[i] = randMToN(0, 100);
+//  }
 
   int *cluster_size = malloc(k * sizeof(double));
   int *cluster_start = malloc(k * sizeof(double));
   int *cluster_assign = malloc(ndata * sizeof(double));
 
   // Initialize cluster assignments
-  for(i = 0; i < ndata; i++) {
+  for (i = 0; i < ndata; i++) {
     cluster_assign[i] = -1;
   }
 
   // Initialize cluster start
-  for(i = 0; i < k; i++) {
+  for (i = 0; i < k; i++) {
     cluster_start[i] = 0;
   }
 
   double *cluster_radius = malloc(k * sizeof(double));
   double **cluster_centroid = malloc(k * sizeof(double *));
-  for(i = 0; i < k; i++) {
+  for (i = 0; i < k; i++) {
     cluster_centroid[i] = malloc(dim * sizeof(double));
     cluster_radius[i] = 0.0;
   }
 
   // Initialize cluster centroids
-  for(i = 0; i < k; i++) {
-    for(j = 0; j < dim; j++) {
+  for (i = 0; i < k; i++) {
+    for (j = 0; j < dim; j++) {
       cluster_centroid[i][j] = 0.0;
     }
   }
 
   printf("\nForming %d clusters via bisecting K-means...\n", k);
-  int numIterations = bisecting_kmeans(dim, ndata, data, k, cluster_size, cluster_start,
-                                       cluster_radius, cluster_centroid, cluster_assign);
+  int numIterations = bisecting_kmeans(dim, ndata, train_features, train_labels, k, cluster_size,
+                                       cluster_start, cluster_radius, cluster_centroid,
+                                       cluster_assign);
 
   printf("\nNumber of iterations for bisecting K-means clustering = %d\n", numIterations);
 
-  writeResults(dim, ndata, data, cluster_assign);
+  //writeResults(dim, ndata, data, cluster_assign);
+
+  printf("\nPerforming searches using test data...\n");
+
+  double *query = malloc(dim * sizeof(double));
+
+  int h = 0;
+  for (i = 0; i < TEST_SIZE; i++) {
+    for (j = i * FEATURE_DIM; j < i * FEATURE_DIM + FEATURE_DIM; j++) {
+      query[h] = test_features[j];
+      h++;
+    }
+
+    h = 0;
+
+    search_clusters_bkm(dim, ndata, train_features, train_labels, test_labels,
+                        k, i, cluster_size, cluster_start, cluster_radius, cluster_centroid,
+                        query, &correct_labeling_count);
+
+    free(query);
+    query = malloc(dim * sizeof(double));
+  }
+
+  printf("Accuracy of labeling = %.2f%%\n", ((double) correct_labeling_count / (double) TEST_SIZE) * 100);
 }
 
 void read_binary_dataset(char *path, int size, int *labels, double *features)

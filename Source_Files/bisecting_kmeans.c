@@ -1,7 +1,7 @@
 #include "../Header_Files/Headers.h"
 #include "../Header_Files/bisecting_kmeans.h"
 
-int bisecting_kmeans(int dim, int ndata, double *data, int k,
+int bisecting_kmeans(int dim, int ndata, double *data, int *labels, int k,
                      int *cluster_size, int *cluster_start,
                      double *cluster_radius, double **cluster_centroid,
                      int *cluster_assign)
@@ -41,8 +41,8 @@ int bisecting_kmeans(int dim, int ndata, double *data, int k,
     curr_cluster_count++;
   }
 
-  num_iterations += kmeans_bkm(dim, ndata, data, k, cluster_size,
-                               cluster_start, cluster_radius,
+  num_iterations += kmeans_bkm(dim, ndata, data, labels, k,
+                               cluster_size, cluster_start, cluster_radius,
                                cluster_centroid, cluster_assign);
 
   return num_iterations;
@@ -100,7 +100,7 @@ int two_kmeans(int dim, int ndata, double *data, int cluster_x, int cluster_y,
   return numIterations;
 }
 
-int kmeans_bkm(int dim, int ndata, double *data, int k,
+int kmeans_bkm(int dim, int ndata, double *data, int *labels, int k,
                int *cluster_size, int *cluster_start,
                double *cluster_radius, double **cluster_centroid,
                int *cluster_assign)
@@ -112,7 +112,7 @@ int kmeans_bkm(int dim, int ndata, double *data, int k,
     prev_cluster_assign[i] = -1;
   }
 
-  int thresh_hold = 2;
+  int thresh_hold = 1;
   while (numIterations < thresh_hold) {
     numIterations++;
 
@@ -141,7 +141,7 @@ int kmeans_bkm(int dim, int ndata, double *data, int k,
                                cluster_size, cluster_assign);
   }
 
-  quick_sort_data_bkm(dim, 0, ndata, data, cluster_assign);
+  quick_sort_data_bkm(dim, 0, ndata, data, labels, cluster_assign);
 
   setClusterStart_bkm(k, cluster_size, cluster_start);
 
@@ -374,16 +374,16 @@ void setPrevClusterAssignments_bkm(int ndata, int *cluster_assign, int *prev_clu
   }
 }
 
-void quick_sort_data_bkm(int dim, int lo, int hi, double *data, int *cluster_assign)
+void quick_sort_data_bkm(int dim, int lo, int hi, double *data, int *labels, int *cluster_assign)
 {
   if(lo < hi) {
-    int pivot = partition_bkm(dim, lo, hi, data, cluster_assign);
-    quick_sort_data_bkm(dim, lo, pivot, data, cluster_assign);
-    quick_sort_data_bkm(dim, pivot+1, hi, data, cluster_assign);
+    int pivot = partition_bkm(dim, lo, hi, data, labels, cluster_assign);
+    quick_sort_data_bkm(dim, lo, pivot, data, labels, cluster_assign);
+    quick_sort_data_bkm(dim, pivot+1, hi, data, labels, cluster_assign);
   }
 }
 
-int partition_bkm(int dim, int lo, int hi, double *data, int *cluster_assign)
+int partition_bkm(int dim, int lo, int hi, double *data, int *labels, int *cluster_assign)
 {
   int p = cluster_assign[lo];
   int i = lo - 1;
@@ -404,6 +404,7 @@ int partition_bkm(int dim, int lo, int hi, double *data, int *cluster_assign)
 
     swap_cluster_assign_bkm(cluster_assign, i, j);
     swap_points_bkm(dim, i, j, data);
+    swap_labels_bkm(labels, i, j);
   }
 }
 
@@ -427,6 +428,14 @@ void swap_points_bkm(int dim, int point1, int point2, double *data)
 
     point2Index++;
   }
+}
+
+void swap_labels_bkm(int *labels, int label1, int label2)
+{
+  int tmp;
+  tmp = labels[label2];
+  labels[label2] = labels[label1];
+  labels[label1] = tmp;
 }
 
 void setClusterStart_bkm(int totalClusters, int *cluster_size, int *cluster_start)
@@ -463,17 +472,13 @@ void setClusterRadius_bkm(int dim, int currCluster, int *cluster_size,
   cluster_radius[currCluster] = maxDistance;
 }
 
-void search_clusters_bkm(int dim, int ndata, double *data, int k, int *cluster_size,
-                         int *cluster_start, double *cluster_radius,
-                         double **cluster_centroid, double *query,
-                         double *result_pt)
+void search_clusters_bkm(int dim, int ndata, double *data, int *train_labels, int *test_labels,
+                         int k, int query_index, int *cluster_size, int *cluster_start,
+                         double *cluster_radius, double **cluster_centroid, double *query,
+                         int *correct_labeling_count)
 {
-  int i, j, closestClusterIndex = -1, numPointsChecked = 0,
-      clusterWithShorterDistanceIndex = -1;
-  double distance, minClusterDistance = (double) INT_MAX,
-      minCurrPointDist = (double) INT_MAX;
-  double *current_pt = malloc(dim * sizeof(double));
-  bool notFinishedSearching = false;
+  int i, j, closestClusterIndex = -1, closest_approx_neighbor = 0, correct_label = 0;
+  double distance, minClusterDistance = (double) INT_MAX;
 
   double *cluster_distances = malloc(k * sizeof(double));
   // Initialize cluster distances to 0.0
@@ -497,77 +502,21 @@ void search_clusters_bkm(int dim, int ndata, double *data, int k, int *cluster_s
   }
 
   // Search points in the closest cluster
-  minCurrPointDist = searchPointsInCluster_bkm(dim, query, current_pt, data,
-                                               closestClusterIndex, cluster_start,
-                                               cluster_size, &numPointsChecked);
+  closest_approx_neighbor = searchPointsInCluster_bkm(dim, query, data, closestClusterIndex,
+                                                      cluster_start, cluster_size);
 
-  for(i = 0; i < dim; i++) {
-    result_pt[i] = current_pt[i];
+  if(train_labels[closest_approx_neighbor] == test_labels[query_index]) {
+    correct_label++; *correct_labeling_count += correct_label;
   }
-
-  // Set the cluster with current min distance to -1, so it is not checked
-  // again.
-  cluster_distances[closestClusterIndex] = -1.0;
-
-  printf("\nFirst check of other clusters...\n");
-  // Check other clusters
-  clusterWithShorterDistanceIndex = checkOtherClusters_bkm(k, cluster_distances,
-                                                           cluster_radius, closestClusterIndex,
-                                                           minCurrPointDist);
-
-  if(clusterWithShorterDistanceIndex != closestClusterIndex) {
-    notFinishedSearching = true;
-    cluster_distances[clusterWithShorterDistanceIndex] = -1.0;
-  }
-  else {
-    printf("\n**Found closest point within the first checked cluster.**");
-  }
-
-  double minNextPointDistance = (double) INT_MAX;
-  while(notFinishedSearching) {
-    minNextPointDistance = searchPointsInCluster_bkm(dim, query, current_pt, data,
-                                                     clusterWithShorterDistanceIndex, cluster_start,
-                                                     cluster_size, &numPointsChecked);
-
-    if(minNextPointDistance < minCurrPointDist) {
-      minCurrPointDist = minNextPointDistance;
-      for(i = 0; i < dim; i++) {
-        result_pt[i] = current_pt[i];
-      }
-    }
-
-    // Continue to check other clusters
-    clusterWithShorterDistanceIndex = checkOtherClusters_bkm(k, cluster_distances,
-                                                             cluster_radius, closestClusterIndex,
-                                                             minCurrPointDist);
-
-    if(clusterWithShorterDistanceIndex == closestClusterIndex) {
-      notFinishedSearching = false;
-    }
-    else {
-      cluster_distances[clusterWithShorterDistanceIndex] = -1.0;
-      closestClusterIndex = clusterWithShorterDistanceIndex;
-    }
-  }
-
-  printf("\n\nKMeans cluster search final result point = ( ");
-  for(i = 0; i < dim; i++) {
-    if(i == dim - 1) { printf("%lf ", result_pt[i]); }
-    else { printf("%lf, ", result_pt[i]); }
-  }
-  printf("),\nwith distance = %lf\n", minCurrPointDist);
-  printf("Number of points checked = %d\n", numPointsChecked);
 
   free(cluster_distances);
-  free(current_pt);
 }
 
-double searchPointsInCluster_bkm(int dim, double *query, double *current_pt,
-                                 double *data, int closestClusterIndex,
-                                 int *cluster_start, int *cluster_size,
-                                 int *numPointsChecked)
+int searchPointsInCluster_bkm(int dim, double *query, double *data, int closestClusterIndex,
+                                 int *cluster_start, int *cluster_size)
 {
-  int i, j, end = cluster_size[closestClusterIndex] + cluster_start[closestClusterIndex], closestPointIndex = -1;
+  int i, j, end = cluster_size[closestClusterIndex] + cluster_start[closestClusterIndex],
+      closest_approx_point_index = -1;
   double distance, minPointDistance = (double) INT_MAX;
 
   for(i = cluster_start[closestClusterIndex]; i < end; i++) {
@@ -575,37 +524,13 @@ double searchPointsInCluster_bkm(int dim, double *query, double *current_pt,
     for(j = 0; j < dim; j++) {
       distance += (query[j] - data[i * dim + j]) * (query[j] - data[i * dim + j]);
     }
-    *numPointsChecked = *numPointsChecked + 1;
     distance = sqrt(distance);
 
     if(distance < minPointDistance) {
       minPointDistance = distance;
-      closestPointIndex = i;
+      closest_approx_point_index = i;
     }
   }
 
-  j = 0;
-  for(i = closestPointIndex * dim; i < closestPointIndex * dim + dim; i++) {
-    current_pt[j] = data[i];
-    j++;
-  }
-
-  return minPointDistance;
+  return closest_approx_point_index;
 }
-
-int checkOtherClusters_bkm(int totalClusters, double *cluster_distances,
-                           double *cluster_radius, int closestClusterIndex,
-                           double minCurrPointDist)
-{
-  int i;
-  for(i = 0; i < totalClusters; i++) {
-    if(cluster_distances[i] != -1.0) {
-      if(minCurrPointDist > cluster_distances[i] - cluster_radius[i]) {
-        return i;
-      }
-    }
-  }
-
-  return closestClusterIndex;
-}
-

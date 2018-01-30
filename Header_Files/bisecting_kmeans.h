@@ -4,7 +4,7 @@
 /**
  * Performs bisecting kmeans clustering on data.
  */
-int bisecting_kmeans(int dim, int ndata, double *data, int k,
+int bisecting_kmeans(int dim, int ndata, double *data, int *labels, int k,
                      int *cluster_size, int *cluster_start,
                      double *cluster_radius, double **cluster_centroid,
                      int *cluster_assign);
@@ -19,7 +19,7 @@ int two_kmeans(int dim, int ndata, double *data, int cluster_x, int cluster_y,
 /**
  * Applies K-means clustering on data. This is the original K-means algorithm.
  */
-int kmeans_bkm(int dim, int ndata, double *data, int k,
+int kmeans_bkm(int dim, int ndata, double *data, int *labels, int k,
                int *cluster_size, int *cluster_start,
                double *cluster_radius, double **cluster_centroid,
                int *cluster_assign);
@@ -89,12 +89,12 @@ void setPrevClusterAssignments_bkm(int ndata, int *cluster_assign, int *prev_clu
 /**
  * Perform quicksort on cluster_assign, swapping labels and data accordingly.
  */
-void quick_sort_data_bkm(int dim, int lo, int hi, double *data, int *cluster_assign);
+void quick_sort_data_bkm(int dim, int lo, int hi, double *data, int *labels, int *cluster_assign);
 
 /**
  * Hoare partition - used for quick_sort_data_bkm.
  */
-int partition_bkm(int dim, int lo, int hi, double *data, int *cluster_assign);
+int partition_bkm(int dim, int lo, int hi, double *data, int *labels, int *cluster_assign);
 
 /**
  * Swap cluster[i] and cluster[j].
@@ -105,6 +105,11 @@ void swap_cluster_assign_bkm(int *cluster_assign, int i, int j);
  * Swap point1 with point2 in data.
  */
 void swap_points_bkm(int dim, int point1, int point2, double *data);
+
+/**
+ * Swap label1 with label2 in labels.
+ */
+void swap_labels_bkm(int *labels, int label1, int label2);
 
 /**
  * Set the starting point for each cluster.
@@ -123,19 +128,16 @@ void setClusterRadius_bkm(int dim, int currCluster, int *cluster_size,
  * Perform a search for query in K clusters and return the number of points
  * searched.
  */
-void search_clusters_bkm(int dim, int ndata, double *data, int k, int *cluster_size,
-                         int *cluster_start, double *cluster_radius,
-                         double **cluster_centroid, double *query,
-                         double *result_pt);
+void search_clusters_bkm(int dim, int ndata, double *data, int *train_labels, int *test_labels,
+                         int k, int query_index, int *cluster_size, int *cluster_start,
+                         double *cluster_radius, double **cluster_centroid, double *query,
+                         int *correct_labeling_count);
 
 /**
- * Search data points within closestCluster. Store result in current_pt and
- * return distance of closest point.
+ * Search data points within closestCluster. Returns closest neighbor point to query[dim].
  */
-double searchPointsInCluster_bkm(int dim, double *query, double *current_pt,
-                                 double *data, int closestCluster,
-                                 int *cluster_start, int *cluster_size,
-                                 int *numPointsChecked);
+int searchPointsInCluster_bkm(int dim, double *query, double *data, int closestClusterIndex,
+                              int *cluster_start, int *cluster_size);
 
 /**
  * Check other cluster distances for a distance shorter than minCurrPointDist.
