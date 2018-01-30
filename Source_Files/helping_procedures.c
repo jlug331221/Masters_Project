@@ -305,91 +305,7 @@ void execute_kdtree_median(int *train_labels, double *train_features, int *test_
   printf("\n");
 }
 
-/**
- * Dr. Zhuang's implementation of bisecting-Kmeans
- */
-void execute_bkmeans(int *train_labels, double *train_features, int *test_labels, double *test_features)
-{
-  int ndata = 50000, dim = 2, kk = 512, i, num_clusters = 0;
-
-  double *data = malloc(ndata * dim * sizeof(double));
-  for(i = 0; i < ndata * dim; i++) {
-    data[i] = randMToN(0, 100);
-  }
-
-  int *cluster_size = malloc(kk * sizeof(double));
-  int *cluster_start = malloc(kk * sizeof(double));
-  int *cluster_assign = malloc(ndata * sizeof(double));
-
-  // Initialize cluster assignments
-  for(i = 0; i < ndata; i++) {
-    cluster_assign[i] = -1;
-  }
-
-  // Initialize cluster start and cluster size
-  for(i = 0; i < kk; i++) {
-    cluster_start[i] = 0;
-    cluster_size[i] = 0;
-  }
-
-  double *cluster_radius = malloc(kk * sizeof(double));
-  double *cluster_center = malloc(kk * sizeof(double));
-  for(i = 0; i < kk; i++) {
-    cluster_center[i] = 0.0;
-    cluster_radius[i] = 0.0;
-  }
-
-  double *datum = malloc(dim * sizeof(double));
-
-  double *cluster_ssd = malloc(kk * sizeof(double));
-
-  printf("\nForming clusters via bisecting-kmeans...\n\n");
-  num_clusters = bkmeans(10, kk, dim, ndata, 0, ndata, data,
-                         cluster_assign, datum,
-                         cluster_center, cluster_radius,
-                         cluster_start, cluster_size, cluster_ssd);
-
-  writeResults(dim, ndata, data, cluster_assign);
-
-  printf("Number of clusters = %d\n", num_clusters);
-
-  //  printf("\nPerforming searches...\n");
-//
-//  double *query = malloc(dim * sizeof(double));
-//  double *result_pt = malloc(dim * sizeof(double));
-//
-//  int h = 0, pts_searched;
-//  for(i = 0; i < TEST_SIZE; i++) {
-//    pts_searched = 0;
-//
-//    for(j = i * FEATURE_DIM; j < i * FEATURE_DIM + FEATURE_DIM; j++) {
-//      query[h] = test_features[j];
-//      h++;
-//    }
-//
-//    h = 0;
-//
-//    pts_searched = search_kdtree_hybrid(dim, ndata, train_features, kk,
-//                                        cluster_start, cluster_size, cluster_bdry,
-//                                        query, result_pt);
-//
-//    //if(i == 999 || i == 1999 || i == 2999 || i == 3999 || i == 4999) {
-//    printf("%d.\tpoints searched = %d\n", i+1, pts_searched);
-//    //}
-//
-//    free(query);
-//    free(result_pt);
-//    query = malloc(dim * sizeof(double));
-//    result_pt = malloc(dim * sizeof(double));
-//  }
-//
-//  printf("\n");
-}
-
-/**
- * My implementation of bisecting-Kmeans
- */
-void execute_bisecting_kmeans(int *train_labels, double *train_features, int *test_labels, double *test_features)
+void execute_bkmeans_j(int *train_labels, double *train_features, int *test_labels, double *test_features)
 {
   int ndata = TRAIN_SIZE, dim = FEATURE_DIM, k = 10, i, j, correct_labeling_count = 0;
 
@@ -457,6 +373,84 @@ void execute_bisecting_kmeans(int *train_labels, double *train_features, int *te
   }
 
   printf("Accuracy of labeling = %.2f%%\n", ((double) correct_labeling_count / (double) TEST_SIZE) * 100);
+}
+
+void execute_bkmeans_z(int *train_labels, double *train_features, int *test_labels, double *test_features)
+{
+  int ndata = 60000, dim = 2, kk = 512, i, num_clusters = 0;
+
+  double *data = malloc(ndata * dim * sizeof(double));
+  for(i = 0; i < ndata * dim; i++) {
+    data[i] = randMToN(0, 100);
+  }
+
+  int *cluster_size = malloc(kk * sizeof(double));
+  int *cluster_start = malloc(kk * sizeof(double));
+  int *cluster_assign = malloc(ndata * sizeof(double));
+
+  // Initialize cluster assignments
+  for(i = 0; i < ndata; i++) {
+    cluster_assign[i] = -1;
+  }
+
+  // Initialize cluster start and cluster size
+  for(i = 0; i < kk; i++) {
+    cluster_start[i] = 0;
+    cluster_size[i] = 0;
+  }
+
+  double *cluster_radius = malloc(kk * sizeof(double));
+  double *cluster_center = malloc(kk * sizeof(double));
+  for(i = 0; i < kk; i++) {
+    cluster_center[i] = 0.0;
+    cluster_radius[i] = 0.0;
+  }
+
+  double *datum = malloc(dim * sizeof(double));
+
+  double *cluster_ssd = malloc(kk * sizeof(double));
+
+  printf("\nForming clusters via bisecting-kmeans...\n\n");
+  num_clusters = bkmeans(10, kk, dim, 0, ndata, data,
+                         cluster_assign, datum,
+                         cluster_center, cluster_radius,
+                         cluster_start, cluster_size, cluster_ssd);
+
+  writeResults(dim, ndata, data, cluster_assign);
+
+  printf("Number of clusters = %d\n", num_clusters);
+
+  //  printf("\nPerforming searches...\n");
+//
+//  double *query = malloc(dim * sizeof(double));
+//  double *result_pt = malloc(dim * sizeof(double));
+//
+//  int h = 0, pts_searched;
+//  for(i = 0; i < TEST_SIZE; i++) {
+//    pts_searched = 0;
+//
+//    for(j = i * FEATURE_DIM; j < i * FEATURE_DIM + FEATURE_DIM; j++) {
+//      query[h] = test_features[j];
+//      h++;
+//    }
+//
+//    h = 0;
+//
+//    pts_searched = search_kdtree_hybrid(dim, ndata, train_features, kk,
+//                                        cluster_start, cluster_size, cluster_bdry,
+//                                        query, result_pt);
+//
+//    //if(i == 999 || i == 1999 || i == 2999 || i == 3999 || i == 4999) {
+//    printf("%d.\tpoints searched = %d\n", i+1, pts_searched);
+//    //}
+//
+//    free(query);
+//    free(result_pt);
+//    query = malloc(dim * sizeof(double));
+//    result_pt = malloc(dim * sizeof(double));
+//  }
+//
+//  printf("\n");
 }
 
 void read_binary_dataset(char *path, int size, int *labels, double *features)

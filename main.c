@@ -36,7 +36,7 @@ void print_time(clock_t begin, clock_t end)
 
 int main(int argc, char **argv)
 {
-  if(argc < 2 || strtol(argv[1], NULL, 0) > 5 || strtol(argv[1], NULL, 0) <= 0) {
+  if(argc < 2 || strtol(argv[1], NULL, 0) > 6 || strtol(argv[1], NULL, 0) <= 0) {
     printf("\nExecute using the following: ./main <clustering>\n");
     printf("The second argument specifies the algorithm used to cluster the data.\n\n");
     printf("\t1: kdtree\n\t2: kmeans\n\t3: LSH\n\t4: kdtree-median\n\t5: bisecting kmeans\n");
@@ -68,10 +68,13 @@ int main(int argc, char **argv)
   if(strtol(argv[1], NULL, 0) == 4) { execute_kdtree_median(test_labels, train_features, test_labels, test_features); }
 
   if(strtol(argv[1], NULL, 0) == 5) {
-    // My implementation of bisecting-Kmeans
-    execute_bisecting_kmeans(train_labels, train_features, test_labels, test_features);
+    // My implementation of bkmeans
+    execute_bkmeans_j(train_labels, train_features, test_labels, test_features);
   }
-//  if(strtol(argv[1], NULL, 0) == 5) { execute_bkmeans(train_labels, train_features, test_labels, test_features); }
+  if(strtol(argv[1], NULL, 0) == 6) {
+    // Dr. Zhuang's implementation of bkmeans
+    execute_bkmeans_z(train_labels, train_features, test_labels, test_features);
+  }
 
   clock_t end = clock();
 

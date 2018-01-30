@@ -14,14 +14,15 @@ double calc_dist_square(int dim, double *datum1, double *datum2);
  * buffers: cluster_assign[], datum, cluster_center0[]                   *
  * radius_pt[2*dim]: - the radius pt of the cluster[k]                   *
  *************************************************************************/
-int two_means(int iterat_limit, int dim, int i0, int im, double *data,                      // input
-              int *cluster_assign, double *datum, double *center0,                          // buffers
-              double *radius_pt, double *center, int start[2], int size[2], double ssd[2]); // output
+int two_means(int iterat_limit, int dim, int i0, int im, double *data,   // input
+              int *cluster_assign, double *datum, double *center0,       // buffers
+              double *radius_pt, double *center, int start[2],
+              int size[2], double ssd[2]); // output
 
-int bkmeans(int iterat_limit, int kk, int dim, int ndata, int i0_in, int im_in, double *data, // input
-            int *cluster_assign, double *datum,                                               // buffers
-            double *cluster_center, double *cluster_radius,                                   // output
-            int *cluster_start, int *cluster_size, double *cluster_ssd);                      // output
+int bkmeans(int iterat_limit, int kk, int dim, int i0_in, int im_in, double *data, // input
+            int *cluster_assign, double *datum,                                    // buffers
+            double *cluster_center, double *cluster_radius,                        // output
+            int *cluster_start, int *cluster_size, double *cluster_ssd);           // output
 
 /******************************************************************************
  kk :               number of clusters, i.e. the K in K-mean.

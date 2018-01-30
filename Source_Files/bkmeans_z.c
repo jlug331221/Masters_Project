@@ -10,20 +10,10 @@ double calc_dist_square(int dim, double *datum1, double *datum2)
   return dist;   /* Square of Euclidean distance */
 }  /****** end of calc_dist_square  ******/
 
-/*************************************************************************
- * array sizes:                                                          *
- *       cluster_assign[ndata], datum[dim], center[2*dim]                *
- * Input:                                                                *
- *       center[0] - centroid of the cluster                             *
- *       radius_pt[0] - farthest pt to the centroid                      *
- * Output:                                                               *
- *       radius_pt, center, start, size, ssd                             *
- * buffers: cluster_assign[], datum, center0[]                           *
- * radius_pt[2*dim]: - the radius pt of the cluster[k]                   *
- *************************************************************************/
 int two_means(int iterat_limit, int dim, int i0, int im, double *data,    /* line of input   */
               int *cluster_assign, double *datum, double *center0,        /* line of buffers */
-              double *radius_pt, double *center, int start[2], int size[2], double ssd[2])
+              double *radius_pt, double *center, int start[2],
+              int size[2], double ssd[2])
 {
   int    i, j, k, i_max, iterations, change, offset,
       start0, start1, end0, end1 ;
@@ -34,7 +24,7 @@ int two_means(int iterat_limit, int dim, int i0, int im, double *data,    /* lin
     center[j] = 2.0*center[j] - radius_pt[j] ;
   } /*** End of choosing initial pair of centers ***/
 
-
+  for(i=i0; i<im; i++) cluster_assign[i] = 0 ;
   change = 1 ;
   iterations = 0 ;
   while( (iterations<iterat_limit) && (change!=0) ) {
@@ -104,12 +94,12 @@ int two_means(int iterat_limit, int dim, int i0, int im, double *data,    /* lin
   return 1 ;
 } /****************** End of function two_means() ******************/
 
-int bkmeans(int iterat_limit, int kk, int dim, int ndata, int i0_in, int im_in, double *data, // line of input
-            int *cluster_assign, double *datum,                                               // line of buffers
+int bkmeans(int iterat_limit, int kk, int dim, int i0_in, int im_in, double *data, // line of input
+            int *cluster_assign, double *datum,                                    // line of buffers
             double *cluster_center, double *cluster_radius,
             int *cluster_start, int *cluster_size, double *cluster_ssd)
 {
-  int i, i0, im, j, k, k_max, nclusters, start[2], size[2] ;
+  int    i0, im, i, j, k, k_max, nclusters, start[2], size[2] ;
   double tmp, dist_max, dist, ssd_initial, ssd[2],
       *center, *radius_pt, *cluster_center0, *cluster_radius_pt ;
 
@@ -118,16 +108,15 @@ int bkmeans(int iterat_limit, int kk, int dim, int ndata, int i0_in, int im_in, 
   cluster_center0  = (double *) calloc((kk*dim), sizeof(double)) ;
   cluster_radius_pt =(double *) calloc((kk*dim), sizeof(double)) ;
 
-
-/*** Compute centroid of the whole dataset ***/
-  memset(cluster_center, 0.0, dim*sizeof(double)) ;
+  /*** Compute centroid of the whole dataset ***/
+  for(j=0; j<dim; j++) cluster_center[j] = 0.0 ;
   for(i=i0_in; i<im_in; i++)
     for(j=0; j<dim; j++) cluster_center[j] += data[i*dim+j];
   for(j=0; j<dim; j++) cluster_center[j] /= (double)(im_in-i0_in) ;
-/*** End of computing centroid of the whole dataset ***/
+  /*** End of computing centroid of the whole dataset ***/
 
-/*** Compute farthest pt to centroid. Store it in radius_pt[0] ***/
-  memset(cluster_radius, 0.0, kk*sizeof(double)) ;
+  /*** Compute farthest pt to centroid. Store it in radius_pt[0] ***/
+  for(k=0; k<kk; k++) cluster_radius[k] = 0.0 ;
   ssd_initial = 0.0 ;
   for(i=i0_in; i<im_in; i++) {
     tmp = calc_dist_square(dim, data+i*dim, cluster_center) ;
@@ -136,10 +125,9 @@ int bkmeans(int iterat_limit, int kk, int dim, int ndata, int i0_in, int im_in, 
       cluster_radius[0] = tmp ;
       memcpy(cluster_radius_pt, data+i*dim, dim*sizeof(double)) ;
     }
-  }/*** End of computing farthest pt to centroid ***/
+  } /*** End of computing farthest pt to centroid ***/
 
-
-  memset(cluster_ssd, 0.0, kk*sizeof(double)) ;
+  for(k=0; k<kk; k++) cluster_ssd[k] = 0.0 ;
   two_means(iterat_limit, dim, i0_in, im_in, data,
             cluster_assign, datum, cluster_center0,
             cluster_radius_pt,cluster_center,cluster_start,cluster_size,cluster_ssd) ;
@@ -153,23 +141,43 @@ int bkmeans(int iterat_limit, int kk, int dim, int ndata, int i0_in, int im_in, 
 
     /*** Split the cluster into 2 clusters ***/
     i0 = cluster_start[k_max];
-    im = i0_in + cluster_size[k_max];
+    im = i0 + cluster_size[k_max];
     for(j=0;j<dim;j++) radius_pt[j]= cluster_radius_pt[k_max*dim+j] ;
     for(j=0;j<dim;j++) center[j]   = cluster_center[k_max*dim+j] ;
-    two_means(iterat_limit, dim, i0_in, im_in, data,
+    two_means(iterat_limit, dim, i0, im, data,
               cluster_assign, datum, cluster_center0,
               radius_pt, center, start, size, ssd) ;
-
+  #if 1
+    for(k=nclusters-1; k>k_max; k--) {
+      cluster_start[k+1]= cluster_start[k];
+      cluster_size[k+1] = cluster_size[k] ;
+      cluster_ssd[k+1]  = cluster_ssd[k] ;
+      memcpy(cluster_radius_pt+(k+1)*dim,cluster_radius_pt+k*dim,dim*sizeof(double)) ;
+      memcpy(cluster_center + (k+1)*dim, cluster_center + k*dim, dim*sizeof(double)) ;
+    }
+    k = k_max ;
+    cluster_start[k]  = start[0] ;
+    cluster_start[k+1]= start[1] ;
+    cluster_size[k]  = size[0] ;
+    cluster_size[k+1]= size[1] ;
+    cluster_ssd[k]  = ssd[0] ;
+    cluster_ssd[k+1]= ssd[1] ;
+    memcpy(cluster_radius_pt+k*dim,    radius_pt,    dim*sizeof(double));
+    memcpy(cluster_radius_pt+(k+1)*dim,radius_pt+dim,dim*sizeof(double));
+    memcpy(cluster_center + k*dim,     center,     dim*sizeof(double)) ;
+    memcpy(cluster_center + (k+1)*dim, center+dim, dim*sizeof(double)) ;
+  #else
     cluster_start[k_max]  = start[0] ;
-    cluster_start[nclusters]= start[1] ;
-    cluster_size[k_max]  = size[0] ;
-    cluster_size[nclusters]= size[1] ;
-    cluster_ssd[k_max]  = ssd[0] ;
-    cluster_ssd[nclusters]= ssd[1] ;
-    memcpy(cluster_radius_pt+k_max*dim,    radius_pt,    dim*sizeof(double));
-    memcpy(cluster_radius_pt+nclusters*dim,radius_pt+dim,dim*sizeof(double));
-    memcpy(cluster_center + k_max*dim,     center,     dim*sizeof(double)) ;
-    memcpy(cluster_center + nclusters*dim, center+dim, dim*sizeof(double)) ;
+      cluster_start[nclusters]= start[1] ;
+      cluster_size[k_max]  = size[0] ;
+      cluster_size[nclusters]= size[1] ;
+      cluster_ssd[k_max]  = ssd[0] ;
+      cluster_ssd[nclusters]= ssd[1] ;
+      memcpy(cluster_radius_pt+k_max*dim,    radius_pt,    dim*sizeof(double));
+      memcpy(cluster_radius_pt+nclusters*dim,radius_pt+dim,dim*sizeof(double));
+      memcpy(cluster_center + k_max*dim,     center,     dim*sizeof(double)) ;
+      memcpy(cluster_center + nclusters*dim, center+dim, dim*sizeof(double)) ;
+  #endif
     nclusters++;
   } /************ End of while() loop ************/
 
@@ -177,9 +185,9 @@ int bkmeans(int iterat_limit, int kk, int dim, int ndata, int i0_in, int im_in, 
     if(cluster_size[k] == 0) { printf("AAA: in bkmeans: cluster %d empty!\n"); }
   }
 
-  if(nclusters > 2) {
-    iterat_limit = 5;
-    nclusters = kmeans_z(iterat_limit, nclusters, dim, i0_in, im_in, data,
+  if(kk > 2) {
+    iterat_limit = 3;
+    nclusters = kmeans_z(iterat_limit, kk, dim, i0_in, im_in, data,
                          cluster_assign, datum, cluster_center0, cluster_radius_pt,
                          cluster_center,cluster_radius,cluster_start,cluster_size,cluster_ssd);
   }
@@ -195,13 +203,14 @@ int bkmeans(int iterat_limit, int kk, int dim, int ndata, int i0_in, int im_in, 
  cluster_radius[kk]:output -- the radius of each output cluster
  cluster_start[kk]: output -- the index of the 1st in each cluster
  cluster_size[kk]:  output -- the num of datapoints in each cluster
+ cluster_ssd[k]:    output -- the sum of square distances to cluster centers
 *******************************************************************************/
 int kmeans_z(int iterat_limit, int kk, int dim, int i0, int im, double *data,
              int *cluster_assign, double *datum, double *cluster_center0,
              double *radius_pt, double *cluster_center, double *cluster_radius,
              int *cluster_start, int *cluster_size, double *cluster_ssd)
 {
-  int i, j, k, k_max, iterations, membership, start0, end0, start1, end1,
+  int i, j, k, k_max, k_chosen, iterations, membership, start0, end0, start1, end1,
       position, change, *cluster_size0, *radius_index, k_max_used, nclusters ;
   double  tmp, dist_min ;
 
@@ -226,7 +235,7 @@ int kmeans_z(int iterat_limit, int kk, int dim, int i0, int im, double *data,
 
     for(i=i0; i<im; i++) {
       memcpy(datum, data+i*dim, dim*sizeof(double));
-      dist_min = 987654321012345.0 ; /* Find closest center to datum */
+      dist_min = 9876543210123.0 ; /* Find closest center to datum */
       for(k=0; k<kk; k++) {
         if(cluster_size0[k]>0) {
           tmp = calc_dist_square(dim, datum, cluster_center0+k*dim);
@@ -252,20 +261,35 @@ int kmeans_z(int iterat_limit, int kk, int dim, int i0, int im, double *data,
     for(k=0; k<kk; k++) {
       if(cluster_size[k] > 0)
         for(j=0;j<dim;j++) cluster_center[k*dim+j] /= (double)cluster_size[k];
-      else if(!k_max_used) {
-        k_max_used = 1 ;
-        i = radius_index[k_max] ;
+      #if 0
+        else if(!k_max_used) {
+            k_max_used = 1 ;
+            i = radius_index[k_max] ;
 
-        cluster_size[k_max]--;
-        cluster_size[k]++ ;
-        cluster_assign[i] = k ;
-        memcpy(cluster_center+k*dim, radius_pt+k_max*dim, dim*sizeof(double));
+            cluster_size[k_max]--;
+            cluster_size[k]++ ;
+            cluster_assign[i] = k ;
+            memcpy(cluster_center+k*dim, radius_pt+k_max*dim, dim*sizeof(double));
+         }
+      #else
+      else {
+        k_chosen = (k_max_used + k_max) % kk;
+        if(cluster_size[k_chosen] > 2) {
+          i = radius_index[k_chosen];
+          cluster_size[k]++;
+          cluster_size[k_chosen]--;
+
+          cluster_assign[i] = k;
+          for(j = 0; j < dim; j++)
+            cluster_center[k*dim+j] = radius_pt[k_chosen*dim+j];
+        }
+        k_max_used ++ ;
       }
+      #endif
     }
-  }/*** End of while( iterations < iterat_limit ) ***/
+  } /*** End of while( iterations < iterat_limit ) ***/
 
-
-/****** Data Re-ordering ******/
+  /****** Data Re-ordering ******/
   position = 0 ;
   for(k=0;k<kk;k++) { cluster_start[k]=position;   position += cluster_size[k]; }
   for(k=0; k<kk-1; k++) {
@@ -274,9 +298,9 @@ int kmeans_z(int iterat_limit, int kk, int dim, int i0, int im, double *data,
     start1= cluster_start[k+1];
     while(start0 < end0) {
       while((start0<end0)&&(cluster_assign[start0]==k)) start0++ ;
-      if(start0<end0) {
+      if(start0 < end0) {
         while((start1<im)&&(cluster_assign[start1]!=k)) start1++ ;
-        if(start1==im) { printf("\nError: start1==im.\n");   return 0; }
+        if(start1==im) { printf("\nError: start1==im.\n");  return 0; }
         memcpy(datum, data+start0*dim, dim*sizeof(double)) ;
         memcpy(data+start0*dim, data+start1*dim, dim*sizeof(double)) ;
         memcpy(data+start1*dim, datum, dim*sizeof(double)) ;
@@ -285,23 +309,32 @@ int kmeans_z(int iterat_limit, int kk, int dim, int i0, int im, double *data,
         start0++;   start1++;
       }
     }
-  }/****** End of loop for(k=0; k<kk-1; k++). End of Data Re-ordering ******/
+  } /****** End of loop for(k=0; k<kk-1; k++). End of Data Re-ordering ******/
 
-
-  for(k = 0; k < kk; k++) {/*** Calculate sse, radius for every cluster ***/
-    cluster_ssd[k] = 0.0 ;        cluster_radius[k]=0.0;
-    start0 = cluster_start[k] ;   end0 = start0 + cluster_size[k] ;
-    for(i=start0; i<end0; i++) {
-      tmp = calc_dist_square(dim, data+i*dim, cluster_center+k*dim) ;
-      if(tmp > cluster_radius[k]) cluster_radius[k] = tmp ;
-      cluster_ssd[k] += tmp ;
+  int num_empty = 0 ;
+  for(k = 0; k < kk; k++) {/*** Calculate sse, radius, delete empty clusters ***/
+    if(cluster_size[k]==0) { num_empty++ ;    nclusters-- ; }
+    else {
+      cluster_ssd[k] = 0.0 ;        cluster_radius[k]=0.0;
+      start0 = cluster_start[k] ;   end0 = start0 + cluster_size[k] ;
+      for(i=start0; i<end0; i++) {
+        tmp = calc_dist_square(dim, data+i*dim, cluster_center+k*dim) ;
+        if(tmp > cluster_radius[k]) cluster_radius[k] = tmp ;
+        cluster_ssd[k] += tmp ;
+      }
+      if(num_empty > 0) {
+        cluster_start[k-num_empty] = cluster_start[k] ;
+        cluster_size[k-num_empty]  = cluster_size[k] ;
+        memcpy(cluster_center+(k-num_empty)*dim, cluster_center+k*dim, dim*sizeof(double)) ;
+        cluster_radius[k-num_empty]= cluster_radius[k] ;
+        cluster_ssd[k-num_empty]   = cluster_ssd[k] ;
+      }
     }
-    if(cluster_size[k]==0) nclusters-- ;
   }
-  for(k=0; k<kk; k++) cluster_radius[k] = sqrt(cluster_radius[k]) ;
-
-
+  for(k=0; k<nclusters; k++) cluster_radius[k] = sqrt(cluster_radius[k]) ;
 
   free(cluster_size0) ;   free(radius_index) ;
   return nclusters ;
 } /****************** End of function kmeans() ******************/
+
+/****************** End of File bkmeans.c ******************/
