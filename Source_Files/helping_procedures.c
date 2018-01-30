@@ -5,8 +5,8 @@
 #include "../Header_Files/kmeans.h"
 #include "../Header_Files/LSH.h"
 #include "../Header_Files/kdtree_median.h"
-#include "../Header_Files/bkmeans.h"
-#include "../Header_Files/bisecting_kmeans.h"
+#include "../Header_Files/bkmeans_z.h"
+#include "../Header_Files/bkmeans_j.h"
 
 double randMToN(double M, double N){
   return M + (rand() / ( RAND_MAX / (N-M) ) ) ;
@@ -391,7 +391,7 @@ void execute_bkmeans(int *train_labels, double *train_features, int *test_labels
  */
 void execute_bisecting_kmeans(int *train_labels, double *train_features, int *test_labels, double *test_features)
 {
-  int ndata = TRAIN_SIZE, dim = FEATURE_DIM, k = 355, i, j, correct_labeling_count = 0;
+  int ndata = TRAIN_SIZE, dim = FEATURE_DIM, k = 10, i, j, correct_labeling_count = 0;
 
 //  double *data = malloc(dim * ndata * sizeof(double));
 //  for(i = 0; i < dim * ndata; i++) {

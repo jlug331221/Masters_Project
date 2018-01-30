@@ -1,7 +1,7 @@
 #include "../Header_Files/Headers.h"
 #include "../Header_Files/Defs.h"
 #include "../Header_Files/kdtree_median.h"
-#include "../Header_Files/bkmeans.h"
+#include "../Header_Files/bkmeans_z.h"
 
 double calc_median(int size, double *data, int *cluster_assign)
 {

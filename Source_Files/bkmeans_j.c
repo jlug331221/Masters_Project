@@ -1,5 +1,5 @@
 #include "../Header_Files/Headers.h"
-#include "../Header_Files/bisecting_kmeans.h"
+#include "../Header_Files/bkmeans_j.h"
 
 int bisecting_kmeans(int dim, int ndata, double *data, int *labels, int k,
                      int *cluster_size, int *cluster_start,
