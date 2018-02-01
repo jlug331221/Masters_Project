@@ -1,22 +1,7 @@
 #ifndef LSH_H
 #define LSH_H
 
-/**
- * Structure used for the data points in a cluster.
- */
-typedef struct data_pt {
-    int d_pt;
-    struct data_pt *next;
-} data_pt;
-
-/**
- * Structure of a cluster. Each cluster has a hash and associated data points.
- */
-typedef struct cluster {
-    int *cluster_hash;
-    data_pt *data_pts;
-    struct cluster *next;
-} cluster;
+#include "../Header_Files/LSH_cluster_ADT.h"
 
 /**
  * Hash ndata points of data and form clusters accordingly.
