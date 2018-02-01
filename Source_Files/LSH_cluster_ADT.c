@@ -94,34 +94,49 @@ void rebalance(Tree T)
   }
 }
 
-void insert(int size, int *cluster_hash, Tree T)
+void insert(int d_pt, int hash_size, int *d_pt_hash, Tree T)
 {
   if(T == NULL) {
     T = malloc(sizeof(Cluster));
-    T->cluster_hash = cluster_hash;
+    T->cluster_hash = d_pt_hash;
     T->data_pts = malloc(sizeof(data_pt));
-    T->data_pts->d_pt = -1;
+    T->data_pts->d_pt = d_pt;
     T->data_pts->next = NULL;
     T->left = NULL;
     T->right = NULL;
     T->ht = 1 + max_height(get_height(T->left), get_height(T->right));
   }
-  else if(compare_hash(size, cluster_hash, T->cluster_hash) < 0) {
-    insert(size, cluster_hash, T->left);
+  else if(compare_hash(hash_size, d_pt_hash, T->cluster_hash) < 0) {
+    insert(d_pt, hash_size, d_pt_hash, T->left);
     rebalance(T);
   }
-  else if(compare_hash(size, cluster_hash, T->cluster_hash) > 0) {
-    insert(size, cluster_hash, T->right);
+  else if(compare_hash(hash_size, d_pt_hash, T->cluster_hash) > 0) {
+    insert(d_pt, hash_size, d_pt_hash, T->right);
     rebalance(T);
+  }
+  else { // equal hash values, add d_pt to cluster node
+    if(T->data_pts == NULL) {
+      T->data_pts = malloc(sizeof(data_pt));
+      T->data_pts->d_pt = d_pt;
+      T->data_pts->next = NULL;
+    }
+    else {
+      // Add d_pt to front of data points list
+      data_pt *new_data_pt = malloc(sizeof(data_pt));
+      new_data_pt->d_pt = d_pt;
+      new_data_pt->next = T->data_pts;
+
+      T->data_pts = new_data_pt;
+    }
   }
 }
 
-int compare_hash(int size, int *cluster_hash, int *cluster_node_hash)
+int compare_hash(int hash_size, const int *d_pt_hash, const int *cluster_node_hash)
 {
   int i;
-  for(i = 0; i < size; i++) {
-    if(cluster_hash[i] < cluster_node_hash[i]) { return -1; }
-    if(cluster_hash[i] > cluster_node_hash[i]) { return 1; }
+  for(i = 0; i < hash_size; i++) {
+    if(d_pt_hash[i] < cluster_node_hash[i]) { return -1; }
+    if(d_pt_hash[i] > cluster_node_hash[i]) { return 1; }
   }
 
   return 0;

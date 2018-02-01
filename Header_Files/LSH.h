@@ -6,7 +6,7 @@
 /**
  * Hash ndata points of data and form clusters accordingly.
  */
-cluster* LSH(int dim, int ndata, double *data,
+Tree LSH(int dim, int ndata, const double *data,
              int m, double **r, double *b, double w,
              int *num_clusters);
 
@@ -17,9 +17,10 @@ cluster* LSH(int dim, int ndata, double *data,
 void hash_pt(int dim, double *data_pt_vector, int m, double **r, double *b, double w, int *pt_hash);
 
 /**
- * Return the hash of q_pt_vector using Gaussian distribution r.
+ * Add pt to clusters using pt_hash. Create new cluster and increment num_clusters when pt_hash does not match
+ * any of the hashes in clusters. Otherwise, add data_pt to matching cluster hash.
  */
-int* hash_q_pt(int dim, double *q_pt_vector, int m, double **r, double *b, double w);
+Tree add_pt_to_cluster(Tree clusters, int pt, const int *pt_hash, int m, int *num_clusters);
 
 /**
  * Return the dot product of vector_a and vector_b.
@@ -27,10 +28,9 @@ int* hash_q_pt(int dim, double *q_pt_vector, int m, double **r, double *b, doubl
 double dot_product(int dim, const double *vector_a, const double *vector_b);
 
 /**
- * Add pt to clusters using pt_hash. Create new cluster and increment num_clusters when pt_hash does not match
- * any of the hashes in clusters. Otherwise, add data_pt to matching cluster hash.
+ * Return the hash of q_pt_vector using Gaussian distribution r.
  */
-cluster* add_pt_to_cluster(cluster* clusters, int pt, int *pt_hash, int m, int *num_clusters);
+int* hash_q_pt(int dim, double *q_pt_vector, int m, double **r, double *b, double w);
 
 /**
  * Search clusters for a matching hash of q_pt_hash. If there is a match, calculate the distance of the closest
@@ -39,7 +39,7 @@ cluster* add_pt_to_cluster(cluster* clusters, int pt, int *pt_hash, int m, int *
  */
 void search_clusters_for_apprx_neighbors(int dim, double *train_features, int *train_labels,
                                          int *test_labels, double *q_pt, int *q_pt_hash, int query_index,
-                                         cluster *clusters, int m, int *correct_labeling_count);
+                                         Tree clusters, int m, int *correct_labeling_count);
 
 /**
  * Calculate and return the distance from q_pt to neighbor_data_pt.
@@ -54,6 +54,6 @@ double gauss_rand();
 /**
  * Print the cluster information of clusters. Used for debugging purposes only.
  */
-void print_clusters_info(int m, cluster *clusters);
+void print_clusters_info(int m, Tree clusters);
 
 #endif //LSH_H

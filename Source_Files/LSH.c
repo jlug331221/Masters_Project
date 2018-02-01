@@ -2,29 +2,31 @@
 #include "../Header_Files/Defs.h"
 #include "../Header_Files/LSH.h"
 
-cluster* LSH(int dim, int ndata, double *data,
+Tree LSH(int dim, int ndata, const double *data,
              int m, double **r, double *b, double w,
              int *num_clusters)
 {
-  int i, j, pt = -1, *pt_hash = malloc(m * sizeof(int));
+  int i, j, *pt_hash = malloc(m * sizeof(int));
   double *data_pt_vector = malloc(dim * sizeof(double));
 
-  cluster *clusters = malloc(sizeof(cluster));
-  clusters->cluster_hash = malloc(m * sizeof(int));
-  clusters->data_pts = malloc(sizeof(data_pt));
-  clusters->data_pts->d_pt = -1;
-  clusters->data_pts->next = NULL;
-  clusters->next = NULL;
+  Tree clusters = NULL;
+
+//  Tree clusters = malloc(sizeof(Cluster)); // Cluster *clusters = malloc(sizeof(Cluster));
+//  clusters->cluster_hash = malloc(m * sizeof(int));
+//  clusters->data_pts = malloc(sizeof(data_pt));
+//  clusters->data_pts->d_pt = -1;
+//  clusters->data_pts->next = NULL;
+//  clusters->left = NULL;
+//  clusters->right = NULL;
 
   for(i = 0; i < ndata; i++) {
-    pt = i;
     for(j = 0; j < dim; j++) {
       data_pt_vector[j] = data[i * dim + j];
     }
 
     hash_pt(dim, data_pt_vector, m, r, b, w, pt_hash);
 
-    clusters = add_pt_to_cluster(clusters, pt, pt_hash, m, num_clusters);
+    clusters = add_pt_to_cluster(clusters, i, pt_hash, m, num_clusters);
   }
 
   free(data_pt_vector); free(pt_hash);
@@ -48,37 +50,7 @@ void hash_pt(int dim, double *data_pt_vector, int m, double **r, double *b, doub
   free(vector);
 }
 
-int* hash_q_pt(int dim, double *q_pt_vector, int m, double **r, double *b, double w)
-{
-  int i, j;
-  double *vector = malloc(dim * sizeof(double));
-  int *q_pt_hash = malloc(m * sizeof(double));
-
-  for(i = 0; i < m; i++) {
-    for(j = 0; j < dim; j++) {
-      vector[j] = r[i][j];
-    }
-
-    q_pt_hash[i] = (int) floor((dot_product(dim, q_pt_vector, vector) - b[i]) / w);
-  }
-
-  free(vector);
-
-  return q_pt_hash;
-}
-
-double dot_product(int dim, const double *vector_a, const double *vector_b)
-{
-  int i;
-  double result = 0.0;
-  for(i = 0; i < dim; i++) {
-    result += vector_a[i] * vector_b[i];
-  }
-
-  return result;
-}
-
-cluster* add_pt_to_cluster(cluster* clusters, int pt, int *pt_hash, int m, int *num_clusters)
+Tree add_pt_to_cluster(Tree clusters, int pt, const int *pt_hash, int m, int *num_clusters)
 {
   int j, k;
   bool matching_hash = true;
@@ -139,9 +111,39 @@ cluster* add_pt_to_cluster(cluster* clusters, int pt, int *pt_hash, int m, int *
   return clusters;
 }
 
+double dot_product(int dim, const double *vector_a, const double *vector_b)
+{
+  int i;
+  double result = 0.0;
+  for(i = 0; i < dim; i++) {
+    result += vector_a[i] * vector_b[i];
+  }
+
+  return result;
+}
+
+int* hash_q_pt(int dim, double *q_pt_vector, int m, double **r, double *b, double w)
+{
+  int i, j;
+  double *vector = malloc(dim * sizeof(double));
+  int *q_pt_hash = malloc(m * sizeof(double));
+
+  for(i = 0; i < m; i++) {
+    for(j = 0; j < dim; j++) {
+      vector[j] = r[i][j];
+    }
+
+    q_pt_hash[i] = (int) floor((dot_product(dim, q_pt_vector, vector) - b[i]) / w);
+  }
+
+  free(vector);
+
+  return q_pt_hash;
+}
+
 void search_clusters_for_apprx_neighbors(int dim, double *train_features, int *train_labels,
                                          int *test_labels, double *q_pt, int *q_pt_hash, int query_index,
-                                         cluster *clusters, int m, int *correct_labeling_count)
+                                         Tree clusters, int m, int *correct_labeling_count)
 {
   int i, pts_searched = 0, correct_label = 0;
   cluster *current_cluster = clusters;
@@ -216,7 +218,7 @@ double gauss_rand()
   return Z;
 }
 
-void print_clusters_info(int m, cluster *clusters)
+void print_clusters_info(int m, Tree clusters)
 {
   int i = 1, j, cluster_count = 0;
   cluster *current_cluster = clusters;

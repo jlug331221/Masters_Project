@@ -25,9 +25,9 @@ typedef struct data_pt {
 } data_pt;
 
 /**
- * Structure of a cluster. Each cluster has a hash and associated data points.
+ * Structure of a cluster. Each cluster node has a hash and associated data points.
  *
- * Cluster information is structured as a balanced binary tree.
+ * Clusters are structured as a balanced binary tree.
  */
 typedef struct Cluster {
   int ht; // Height of this cluster node
@@ -35,13 +35,6 @@ typedef struct Cluster {
   data_pt *data_pts;
   struct Cluster *left;
   struct Cluster *right;
-
-  Cluster(int *c_h, struct Cluster *lft, struct Cluster *rgt) {
-    cluster_hash = c_h;
-    left = lft;
-    right = rgt;
-    ht = 1 + max_height(get_height(lft), get_height(rgt));
-  }
 } Cluster;
 
 /**
@@ -88,17 +81,17 @@ void rotate_right(Tree T);
 void rebalance(Tree T);
 
 /**
- * Inserts cluster node with cluster_hash[size] into the binary search tree. If cluster_hash[size] already
- * exists in the tree, nothing is done.
+ * Inserts data point d_pt with d_pt_hash[hash_size] into the binary search tree. If d_pt_hash[hash_size] already
+ * exists in the tree, d_pt is added to the cluster. If not, a new cluster node is added to T.
  * Rebalancing is done after insertion if necessary.
  */
-void insert(int size, int *cluster_hash, Tree T);
+void insert(int d_pt, int hash_size, int *d_pt_hash, Tree T);
 
 /**
  * Return -1 if cluster_hash < cluster_node_hash
  * Return 1 if cluster_hash > cluster_node_hash
  * Return 0 if cluster_hash == cluster_node_hash
  */
-int compare_hash(int size, int *cluster_hash, int *cluster_node_hash)
+int compare_hash(int hash_size, const int *cluster_hash, const int *cluster_node_hash)
 
 #endif //MASTERS_PROJECT_LSH_CLUSTER_ADT_H
