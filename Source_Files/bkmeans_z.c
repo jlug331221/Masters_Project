@@ -19,7 +19,7 @@ int two_means(int iterat_limit, int dim, int i0, int im, double *data,    /* lin
       start0, start1, end0, end1 ;
   double tmp, dist_max, dist, dist0, dist1 ;
 
-  for(j=0;j<dim;j++) {/*** Choosing initial pair of centers ***/
+  for(j=0;j<dim;j++) { /*** Choosing initial pair of centers ***/
     center[dim+j] = radius_pt[j] ;
     center[j] = 2.0*center[j] - radius_pt[j] ;
   } /*** End of choosing initial pair of centers ***/
@@ -53,7 +53,7 @@ int two_means(int iterat_limit, int dim, int i0, int im, double *data,    /* lin
     if(size[1] > 0)
       for(j=0; j<dim; j++) center[dim+j] /= size[1] ;
 
-  }/****** End of while(iterations < iterat_limit) ******/
+  } /****** End of while(iterations < iterat_limit) ******/
 
 
   /****** Data Re-ordering ******/
@@ -94,10 +94,10 @@ int two_means(int iterat_limit, int dim, int i0, int im, double *data,    /* lin
   return 1 ;
 } /****************** End of function two_means() ******************/
 
-int bkmeans(int iterat_limit, int kk, int dim, int i0_in, int im_in, double *data, // line of input
-            int *cluster_assign, double *datum,                                    // line of buffers
-            double *cluster_center, double *cluster_radius,
-            int *cluster_start, int *cluster_size, double *cluster_ssd)
+int bkmeans_z(int iterat_limit, int kk, int dim, int i0_in, int im_in, double *data, // line of input
+              int *cluster_assign, double *datum,                                    // line of buffers
+              double *cluster_center, double *cluster_radius,
+              int *cluster_start, int *cluster_size, double *cluster_ssd)
 {
   int    i0, im, i, j, k, k_max, nclusters, start[2], size[2] ;
   double tmp, dist_max, dist, ssd_initial, ssd[2],
