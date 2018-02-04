@@ -24,3 +24,6 @@ cmake-build-release/
 
 ## File-based project format:
 *.iws
+
+# LSH Cluster Data Information
+LSH_Cluster_Data_Info

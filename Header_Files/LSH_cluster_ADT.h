@@ -83,15 +83,33 @@ void rebalance(Tree T);
 /**
  * Inserts data point d_pt with d_pt_hash[hash_size] into the binary search tree. If d_pt_hash[hash_size] already
  * exists in the tree, d_pt is added to the cluster. If not, a new cluster node is added to T.
- * Rebalancing is done after insertion if necessary.
+ * Re-balancing is done after insertion if necessary.
  */
-void insert(int d_pt, int hash_size, int *d_pt_hash, Tree T);
+Tree insert(Tree T, int d_pt, int hash_size, int *d_pt_hash);
 
 /**
- * Return -1 if cluster_hash < cluster_node_hash
- * Return 1 if cluster_hash > cluster_node_hash
- * Return 0 if cluster_hash == cluster_node_hash
+ * Return -1 if d_pt_hash < cluster_node_hash
+ * Return 1 if d_pt_hash > cluster_node_hash
+ * Return 0 if d_pt_hash == cluster_node_hash
  */
-int compare_hash(int hash_size, const int *cluster_hash, const int *cluster_node_hash)
+int compare_hash(int hash_size, const int *d_pt_hash, const int *cluster_node_hash);
+
+/**
+ * Returns the total amount of cluster nodes in T.
+ */
+int get_cluster_count(Tree T);
+
+/**
+ * Write the LSH clusters info (including dimensions, hash size, w and total number of clusters) to
+ * 'LSH_Cluster_Data_Info/clusters.dat'.
+ */
+void write_LSH_clusters_info(Tree T, int dim, int hash_size, double w, int cluster_count);
+
+/**
+ * Write cluster node info (cluster hash value and data points) to 'LSH_Cluster_Data_Info/clusters.dat'.
+ *
+ * Printing of cluster info is done via Inorder tree traversal (Left, Root, Right).
+ */
+void write_cluster_node_info(FILE *f, Tree T, int hash_size);
 
 #endif //MASTERS_PROJECT_LSH_CLUSTER_ADT_H

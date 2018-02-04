@@ -11,6 +11,13 @@ int get_height(Tree T)
   }
 }
 
+int max_height(int x, int y)
+{
+  if(x > y) { return x; }
+
+  return y;
+}
+
 int set_height(Tree T)
 {
   T->ht = 1 + max_height(get_height(T->left), get_height(T->right));
@@ -94,24 +101,32 @@ void rebalance(Tree T)
   }
 }
 
-void insert(int d_pt, int hash_size, int *d_pt_hash, Tree T)
+Tree insert(Tree T, int d_pt, int hash_size, int *d_pt_hash)
 {
   if(T == NULL) {
     T = malloc(sizeof(Cluster));
-    T->cluster_hash = d_pt_hash;
+    T->cluster_hash = malloc(hash_size*sizeof(int));
+
+    int i;
+    for(i = 0; i < hash_size; i++) {
+      T->cluster_hash[i] = d_pt_hash[i];
+    }
+
     T->data_pts = malloc(sizeof(data_pt));
     T->data_pts->d_pt = d_pt;
     T->data_pts->next = NULL;
     T->left = NULL;
     T->right = NULL;
     T->ht = 1 + max_height(get_height(T->left), get_height(T->right));
+
+    return T;
   }
   else if(compare_hash(hash_size, d_pt_hash, T->cluster_hash) < 0) {
-    insert(d_pt, hash_size, d_pt_hash, T->left);
+    T->left = insert(T->left, d_pt, hash_size, d_pt_hash);
     rebalance(T);
   }
   else if(compare_hash(hash_size, d_pt_hash, T->cluster_hash) > 0) {
-    insert(d_pt, hash_size, d_pt_hash, T->right);
+    T->right = insert(T->right, d_pt, hash_size, d_pt_hash);
     rebalance(T);
   }
   else { // equal hash values, add d_pt to cluster node
@@ -120,14 +135,15 @@ void insert(int d_pt, int hash_size, int *d_pt_hash, Tree T)
       T->data_pts->d_pt = d_pt;
       T->data_pts->next = NULL;
     }
-    else {
-      // Add d_pt to front of data points list
+    else { // Add d_pt to front of data points list
       data_pt *new_data_pt = malloc(sizeof(data_pt));
       new_data_pt->d_pt = d_pt;
       new_data_pt->next = T->data_pts;
 
       T->data_pts = new_data_pt;
     }
+
+    return T;
   }
 }
 
@@ -140,4 +156,51 @@ int compare_hash(int hash_size, const int *d_pt_hash, const int *cluster_node_ha
   }
 
   return 0;
+}
+
+int get_cluster_count(Tree T)
+{
+  if(T == NULL) { return 0; }
+  else { return 1 + get_cluster_count(T->left) + get_cluster_count(T->right); }
+}
+
+void write_LSH_clusters_info(Tree T, int dim, int hash_size, double w, int cluster_count)
+{
+  int i;
+  FILE *file;
+
+  file = fopen("../LSH_Cluster_Data_Info/clusters.dat", "w");
+  fprintf(file, "cluster count = %d\n", cluster_count);
+  fprintf(file, "hash size = %d\n", hash_size);
+  fprintf(file, "w = %.01lf\n\n", w);
+
+  write_cluster_node_info(file, T, hash_size);
+
+  fclose(file);
+}
+
+void write_cluster_node_info(FILE *file, Tree T, int hash_size)
+{
+  if(T == NULL) { return; }
+
+  write_cluster_node_info(file, T->left, hash_size);
+
+  // Print cluster node info (hash value of cluster node and data points at cluster node
+  int i;
+  fprintf(file, "Cluster node hash: ");
+  for(i = 0; i < hash_size; i++) {
+    fprintf(file, "%4d", T->cluster_hash[i]);
+  }
+  fprintf(file, "\n");
+
+  fprintf(file, "Data points: ");
+  data_pt *tmp = T->data_pts;
+  while(tmp != NULL) {
+    fprintf(file, "%6d", tmp->d_pt);
+
+    tmp = tmp->next;
+  }
+  fprintf(file, "\n*******************************************************************\n\n");
+
+  write_cluster_node_info(file, T->right, hash_size);
 }
