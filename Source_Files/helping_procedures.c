@@ -167,7 +167,7 @@ void execute_kmeans(int *train_labels, double *train_features, int *test_labels,
 
 void execute_LSH(int *train_labels, double *train_features, int *test_labels, double *test_features)
 {
-  int dim = FEATURE_DIM, ndata = 100,
+  int dim = FEATURE_DIM, ndata = TRAIN_SIZE,
     m = 3, // hash size,
     i, j, correct_labeling_count = 0, cluster_count = 0;
   double w = 7.0;
@@ -193,9 +193,21 @@ void execute_LSH(int *train_labels, double *train_features, int *test_labels, do
 
   cluster_count = get_cluster_count(clusters);
 
+  if(DEBUG) {
+    int *data_pts = malloc(ndata * sizeof(int));
+    for(i = 0; i < ndata; i++) { data_pts[i] = -1; }
+    verify_data_pts_clustered(clusters, data_pts, ndata);
+
+    for(i = 0; i < ndata; i++) {
+      if(data_pts[i] == -1) {
+        printf("\n** Point %d not clustered **\n", i);
+      }
+    }
+  }
+
   printf("\nTotal cluster count = %d\n\n", cluster_count);
 
-  write_LSH_clusters_info(clusters, dim, m, w, cluster_count);
+  if(DEBUG) { write_LSH_clusters_info(clusters, dim, m, w, cluster_count); }
 
 //  printf("Performing searches using test data...\n");
 //

@@ -23,7 +23,7 @@ int set_height(Tree T)
   T->ht = 1 + max_height(get_height(T->left), get_height(T->right));
 }
 
-void single_rotate_left(Tree T)
+Tree single_rotate_left(Tree T)
 {
   Tree R = T->right;
   T->right = R->left;
@@ -32,9 +32,11 @@ void single_rotate_left(Tree T)
   R->left = T;
   T = R;
   set_height(T);
+
+  return T;
 }
 
-void single_rotate_right(Tree T)
+Tree single_rotate_right(Tree T)
 {
   Tree L = T->left;
   T->left = L->right;
@@ -43,62 +45,74 @@ void single_rotate_right(Tree T)
   L->right = T;
   T = L;
   set_height(T);
+
+  return T;
 }
 
-void double_rotate_left(Tree T)
+Tree double_rotate_left(Tree T)
 {
-  single_rotate_right(T->right);
-  single_rotate_left(T);
+  T->right = single_rotate_right(T->right);
+  T = single_rotate_left(T);
+
+  return T;
 }
 
-void double_rotate_right(Tree T)
+Tree double_rotate_right(Tree T)
 {
-  single_rotate_left(T->left);
-  single_rotate_right(T);
+  T->left = single_rotate_left(T->left);
+  T = single_rotate_right(T);
+
+  return T;
 }
 
-void rotate_left(Tree T)
+Tree rotate_left(Tree T)
 {
   Tree R = T->right;
   int zag = get_height(R->left);
   int zig = get_height(R->right);
 
   if(zig > zag) {
-    single_rotate_left(T);
+    T = single_rotate_left(T);
   }
   else {
-    double_rotate_left(T);
+    T = double_rotate_left(T);
   }
+
+  return T;
 }
 
-void rotate_right(Tree T)
+Tree rotate_right(Tree T)
 {
   Tree L = T->left;
   int zig = get_height(L->left);
   int zag = get_height(L->right);
 
   if(zig > zag) {
-    single_rotate_right(T);
+    T = single_rotate_right(T);
   }
   else {
-    double_rotate_right(T);
+    T = double_rotate_right(T);
   }
+
+  return T;
 }
 
-void rebalance(Tree T)
+Tree rebalance(Tree T)
 {
   int h_left = get_height(T->left);
   int h_right = get_height(T->right);
 
   if(h_right > h_left + 1) {
-    rotate_left(T);
+    T = rotate_left(T);
   }
   else if(h_left > h_right + 1) {
-    rotate_right(T);
+    T = rotate_right(T);
   }
   else {
     set_height(T);
   }
+
+  return T;
 }
 
 Tree insert(Tree T, int d_pt, int hash_size, int *d_pt_hash)
@@ -123,11 +137,13 @@ Tree insert(Tree T, int d_pt, int hash_size, int *d_pt_hash)
   }
   else if(compare_hash(hash_size, d_pt_hash, T->cluster_hash) < 0) {
     T->left = insert(T->left, d_pt, hash_size, d_pt_hash);
-    rebalance(T);
+    T = rebalance(T);
+    return T;
   }
   else if(compare_hash(hash_size, d_pt_hash, T->cluster_hash) > 0) {
     T->right = insert(T->right, d_pt, hash_size, d_pt_hash);
-    rebalance(T);
+    T = rebalance(T);
+    return T;
   }
   else { // equal hash values, add d_pt to cluster node
     if(T->data_pts == NULL) {
@@ -203,4 +219,18 @@ void write_cluster_node_info(FILE *file, Tree T, int hash_size)
   fprintf(file, "\n*******************************************************************\n\n");
 
   write_cluster_node_info(file, T->right, hash_size);
+}
+
+void verify_data_pts_clustered(Tree T, int *data_pts, int ndata) {
+  data_pt *tmp = T->data_pts;
+  int i;
+
+  while(tmp != NULL) {
+    data_pts[tmp->d_pt] = tmp->d_pt;
+
+    tmp = tmp->next;
+  }
+
+  if(T->left != NULL) { verify_data_pts_clustered(T->left, data_pts, ndata); }
+  if(T->right != NULL) { verify_data_pts_clustered(T->right, data_pts, ndata); }
 }

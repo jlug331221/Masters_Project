@@ -47,38 +47,38 @@ int set_height(Tree T);
 /**
  * Perform a single rotation from right to left at the root of T.
  */
-void single_rotate_left(Tree T);
+Tree single_rotate_left(Tree T);
 
 /**
  * Performs a single rotation from left to right at the root of T.
  */
-void single_rotate_right(Tree T);
+Tree single_rotate_right(Tree T);
 
 /**
  * Performs a double rotation from right to left at the root of T.
  */
-void double_rotate_left(Tree T);
+Tree double_rotate_left(Tree T);
 
 /**
  * Performs a double rotation from left to right at the root of T.
  */
-void double_rotate_right(Tree T);
+Tree double_rotate_right(Tree T);
 
 /**
  * Performs a rotation from right to left at the root of T, with either a single or double rotation.
  */
-void rotate_left(Tree T);
+Tree rotate_left(Tree T);
 
 /**
  * Performs a rotation from left to right at the root of T, with either a single or double rotation.
  */
-void rotate_right(Tree T);
+Tree rotate_right(Tree T);
 
 /**
  * Rebalance by performing a rotation at T if required. Set the height field of T correctly (even if no
  * rotation is performed).
  */
-void rebalance(Tree T);
+Tree rebalance(Tree T);
 
 /**
  * Inserts data point d_pt with d_pt_hash[hash_size] into the binary search tree. If d_pt_hash[hash_size] already
@@ -111,5 +111,13 @@ void write_LSH_clusters_info(Tree T, int dim, int hash_size, double w, int clust
  * Printing of cluster info is done via Inorder tree traversal (Left, Root, Right).
  */
 void write_cluster_node_info(FILE *f, Tree T, int hash_size);
+
+/**
+ * Verify that all data points have been clustered.
+ *
+ * Prints to console whether all points have been assigned a cluster; if not, then the points not clustered
+ * is printed to console.
+ */
+void verify_data_pts_clustered(Tree T, int *data_pts, int ndata);
 
 #endif //MASTERS_PROJECT_LSH_CLUSTER_ADT_H
