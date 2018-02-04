@@ -119,14 +119,14 @@ Tree insert(Tree T, int d_pt, int hash_size, int *d_pt_hash)
 {
   if(T == NULL) {
     T = malloc(sizeof(Cluster));
-    T->cluster_hash = malloc(hash_size*sizeof(int));
+    T->cluster_hash = malloc(hash_size * sizeof(int));
 
     int i;
     for(i = 0; i < hash_size; i++) {
       T->cluster_hash[i] = d_pt_hash[i];
     }
 
-    T->data_pts = malloc(sizeof(data_pt));
+    T->data_pts = malloc(sizeof(Data_pt));
     T->data_pts->d_pt = d_pt;
     T->data_pts->next = NULL;
     T->left = NULL;
@@ -147,12 +147,12 @@ Tree insert(Tree T, int d_pt, int hash_size, int *d_pt_hash)
   }
   else { // equal hash values, add d_pt to cluster node
     if(T->data_pts == NULL) {
-      T->data_pts = malloc(sizeof(data_pt));
+      T->data_pts = malloc(sizeof(Data_pt));
       T->data_pts->d_pt = d_pt;
       T->data_pts->next = NULL;
     }
     else { // Add d_pt to front of data points list
-      data_pt *new_data_pt = malloc(sizeof(data_pt));
+      Data_pt *new_data_pt = malloc(sizeof(Data_pt));
       new_data_pt->d_pt = d_pt;
       new_data_pt->next = T->data_pts;
 
@@ -172,6 +172,23 @@ int compare_hash(int hash_size, const int *d_pt_hash, const int *cluster_node_ha
   }
 
   return 0;
+}
+
+Data_pt* find_neighbors(Tree T, int hash_size, int *q_pt_hash)
+{
+  if(T == NULL) { return NULL; }
+
+  if(compare_hash(hash_size, q_pt_hash, T->cluster_hash) == 0) {
+    return T->data_pts;
+  }
+
+  if(compare_hash(hash_size, q_pt_hash, T->cluster_hash) < 0) {
+    return find_neighbors(T->left, hash_size, q_pt_hash);
+  }
+
+  if(compare_hash(hash_size, q_pt_hash, T->cluster_hash) > 0) {
+    return find_neighbors(T->right, hash_size, q_pt_hash);
+  }
 }
 
 int get_cluster_count(Tree T)
@@ -210,7 +227,7 @@ void write_cluster_node_info(FILE *file, Tree T, int hash_size)
   fprintf(file, "\n");
 
   fprintf(file, "Data points: ");
-  data_pt *tmp = T->data_pts;
+  Data_pt *tmp = T->data_pts;
   while(tmp != NULL) {
     fprintf(file, "%6d", tmp->d_pt);
 
@@ -222,7 +239,7 @@ void write_cluster_node_info(FILE *file, Tree T, int hash_size)
 }
 
 void verify_data_pts_clustered(Tree T, int *data_pts, int ndata) {
-  data_pt *tmp = T->data_pts;
+  Data_pt *tmp = T->data_pts;
   int i;
 
   while(tmp != NULL) {

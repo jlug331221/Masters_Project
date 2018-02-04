@@ -19,10 +19,10 @@ int max_height(int x, int y);
 /**
  * Structure used for the data points in a cluster.
  */
-typedef struct data_pt {
+typedef struct Data_pt {
   int d_pt;
-  struct data_pt *next;
-} data_pt;
+  struct Data_pt *next;
+} Data_pt;
 
 /**
  * Structure of a cluster. Each cluster node has a hash and associated data points.
@@ -32,7 +32,7 @@ typedef struct data_pt {
 typedef struct Cluster {
   int ht; // Height of this cluster node
   int *cluster_hash;
-  data_pt *data_pts;
+  Data_pt *data_pts;
   struct Cluster *left;
   struct Cluster *right;
 } Cluster;
@@ -93,6 +93,11 @@ Tree insert(Tree T, int d_pt, int hash_size, int *d_pt_hash);
  * Return 0 if d_pt_hash == cluster_node_hash
  */
 int compare_hash(int hash_size, const int *d_pt_hash, const int *cluster_node_hash);
+
+/**
+ * Returns the neighbors that match q_pt_hash[hash_size] in T.
+ */
+Data_pt* find_neighbors(Tree T, int hash_size, int *q_pt_hash);
 
 /**
  * Returns the total amount of cluster nodes in T.

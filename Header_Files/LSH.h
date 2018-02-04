@@ -33,17 +33,19 @@ int* hash_q_pt(int dim, double *q_pt_vector, int m, double **r, const double *b,
 
 /**
  * Search clusters for a matching hash of q_pt_hash. If there is a match, calculate the distance of the closest
- * neighbor and determine if the train label equals the test label. Increment correct_labeling_count if the
- * labels match.
+ * neighbor and determine if the training label equals the test label.
+ *
+ * Increment correct_labeling_count if the labels match and return the number of points searched.
  */
-//void search_clusters_for_apprx_neighbors(int dim, double *train_features, int *train_labels,
-//                                         int *test_labels, double *q_pt, int *q_pt_hash, int query_index,
-//                                         Tree clusters, int m, int *correct_labeling_count);
+int search_clusters_for_apprx_neighbors(int dim, double *train_features, int *train_labels,
+                                         int *test_labels, double *q_pt, int *q_pt_hash,
+                                         int test_query_index, Tree clusters, int m,
+                                         int *correct_labeling_count);
 
 /**
  * Calculate and return the distance from q_pt to neighbor_data_pt.
  */
-//double calc_dist_to_neighbor(int dim, double *data, double *q_pt, int neighbor_data_pt);
+double calc_dist_to_neighbor(int dim, double *data, double *q_pt, int neighbor_data_pt);
 
 /**
  * Return random Gaussian distribution value. Taken from a method described by Abramowitz and Stegun.

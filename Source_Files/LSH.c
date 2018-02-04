@@ -78,64 +78,43 @@ int* hash_q_pt(int dim, double *q_pt_vector, int m, double **r, const double *b,
   return q_pt_hash;
 }
 
-//void search_clusters_for_apprx_neighbors(int dim, double *train_features, int *train_labels,
-//                                         int *test_labels, double *q_pt, int *q_pt_hash, int query_index,
-//                                         Tree clusters, int m, int *correct_labeling_count)
-//{
-//  int i, pts_searched = 0, correct_label = 0;
-//  Tree current_cluster = clusters;
-//  bool matching_hash = true;
-//  double closest_neighbor_dist = (double) INT_MAX, distance = 0.0;
-//
-//  while(current_cluster != NULL) {
-//    for(i = 0; i < m; i++) {
-//      if(q_pt_hash[i] != current_cluster->cluster_hash[i]) {
-//        matching_hash = false;
-//      }
-//    }
-//
-//    if(matching_hash) {
-//      int neighbor_data_pt = -1, closest_neighbor_pt = -1;
-//      data_pt *neighbors = current_cluster->data_pts;
-//      while(neighbors != NULL) {
-//        neighbor_data_pt = neighbors->d_pt;
-//
-//        distance = calc_dist_to_neighbor(dim, train_features, q_pt, neighbor_data_pt);
-//        if(distance < closest_neighbor_dist) {
-//          closest_neighbor_dist = distance;
-//          closest_neighbor_pt = neighbor_data_pt;
-//        }
-//
-//        neighbors = neighbors->next;
-//        pts_searched++;
-//      }
-//
-//      if(train_labels[closest_neighbor_pt] == test_labels[query_index]) {
-//        correct_label++; *correct_labeling_count += correct_label;
-//      }
-//
-//      return;
-//    }
-//    else if(current_cluster->next == NULL) {
-//      return;
-//    }
-//    else { // Keep iterating through clusters list to check the next hash value.
-//      matching_hash = true;
-//      current_cluster = current_cluster->next;
-//    }
-//  }
-//}
+int search_clusters_for_apprx_neighbors(int dim, double *train_features, int *train_labels,
+                                         int *test_labels, double *q_pt, int *q_pt_hash,
+                                         int test_query_index, Tree clusters, int m,
+                                         int *correct_labeling_count)
+{
+  int i, pts_searched = 0, correct_label = 0, closest_neighbor_pt = -1;
+  double closest_neighbor_dist = (double) INT_MAX, current_neighbor_pt_distance = 0.0;
 
-//double calc_dist_to_neighbor(int dim, double *data, double *q_pt, int neighbor_data_pt)
-//{
-//  int i;
-//  double distance = 0.0;
-//  for(i = 0; i < dim; i++) {
-//    distance += (q_pt[i] - data[neighbor_data_pt * dim + i]) * (q_pt[i] - data[neighbor_data_pt * dim + i]);
-//  }
-//
-//  return sqrt(distance);
-//}
+  Data_pt *neighbors = find_neighbors(clusters, m, q_pt_hash);
+
+  while(neighbors != NULL) {
+    current_neighbor_pt_distance = calc_dist_to_neighbor(dim, train_features, q_pt, neighbors->d_pt);
+
+    if(current_neighbor_pt_distance < closest_neighbor_dist) {
+      closest_neighbor_dist = current_neighbor_pt_distance;
+      closest_neighbor_pt = neighbors->d_pt;
+    }
+
+    neighbors = neighbors->next;
+    pts_searched++;
+  }
+
+  if(train_labels[closest_neighbor_pt] == test_labels[test_query_index]) { *correct_labeling_count += 1; }
+
+  return pts_searched;
+}
+
+double calc_dist_to_neighbor(int dim, double *data, double *q_pt, int neighbor_data_pt)
+{
+  int i;
+  double distance = 0.0;
+  for(i = 0; i < dim; i++) {
+    distance += (q_pt[i] - data[neighbor_data_pt * dim + i]) * (q_pt[i] - data[neighbor_data_pt * dim + i]);
+  }
+
+  return sqrt(distance);
+}
 
 double gauss_rand()
 {

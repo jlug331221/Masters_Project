@@ -45,7 +45,6 @@ int main(int argc, char **argv)
   }
 
   clock_t begin = clock();
-//  srand(2);
   srand(time(NULL));
 
   int *train_labels = malloc(sizeof(int) * TRAIN_SIZE);

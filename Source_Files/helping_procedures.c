@@ -207,29 +207,31 @@ void execute_LSH(int *train_labels, double *train_features, int *test_labels, do
 
   printf("\nTotal cluster count = %d\n\n", cluster_count);
 
-  if(DEBUG) { write_LSH_clusters_info(clusters, dim, m, w, cluster_count); }
+  //if(DEBUG) { write_LSH_clusters_info(clusters, dim, m, w, cluster_count); }
 
-//  printf("Performing searches using test data...\n");
-//
-//  double *q_pt = malloc(dim * sizeof(double));
-//  int k = 0;
-//  for(i = 0; i < TEST_SIZE; i++) {
-//    for(j = i*FEATURE_DIM; j < i*FEATURE_DIM+FEATURE_DIM; j++) {
-//      q_pt[k] = test_features[j];
-//      k++;
-//    }
-//    k = 0;
-//
-//    int *q_pt_hash = hash_q_pt(dim, q_pt, m, r, b, w);
-//
-//    search_clusters_for_apprx_neighbors(dim, train_features, train_labels, test_labels, q_pt,
-//                                        q_pt_hash, i, clusters, m, &correct_labeling_count);
-//
-//    free(q_pt);
-//    q_pt = malloc(dim * sizeof(double));
-//  }
-//
-//  printf("Accuracy of labeling = %.2f%%\n", ((double) correct_labeling_count / (double) TEST_SIZE) * 100);
+  printf("Performing searches using test data...\n\n");
+
+  double *q_pt = malloc(dim * sizeof(double));
+  int k = 0, pts_searched = 0;
+  for(i = 0; i < TEST_SIZE; i++) {
+    for(j = i*FEATURE_DIM; j < i*FEATURE_DIM+FEATURE_DIM; j++) {
+      q_pt[k] = test_features[j];
+      k++;
+    }
+    k = 0;
+
+    int *q_pt_hash = hash_q_pt(dim, q_pt, m, r, b, w);
+
+    pts_searched += search_clusters_for_apprx_neighbors(dim, train_features, train_labels, test_labels, q_pt,
+                                                        q_pt_hash, i, clusters, m, &correct_labeling_count);
+
+    free(q_pt);
+    q_pt = malloc(dim * sizeof(double));
+  }
+
+  printf("Average amount of points searched per query = %.1f\n", (double) pts_searched / (double) TEST_SIZE);
+
+  printf("Accuracy of labeling = %.2f%%\n", ((double) correct_labeling_count / (double) TEST_SIZE) * 100);
 }
 
 void execute_kdtree_median(int *train_labels, double *train_features, int *test_labels, double *test_features)
