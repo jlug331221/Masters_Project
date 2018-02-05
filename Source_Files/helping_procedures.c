@@ -377,7 +377,7 @@ void execute_bkmeans_j(int *train_labels, double *train_features, int *test_labe
 
 void execute_bkmeans_z(int *train_labels, double *train_features, int *test_labels, double *test_features)
 {
-  int ndata = TRAIN_SIZE, dim = FEATURE_DIM, kk = 10, i, num_clusters = 0;
+  int ndata = TRAIN_SIZE, dim = FEATURE_DIM, kk = 15, i, num_clusters = 0;
 
 //  double *data = malloc(ndata * dim * sizeof(double));
 //  for(i = 0; i < ndata * dim; i++) {
