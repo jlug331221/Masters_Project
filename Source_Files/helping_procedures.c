@@ -15,7 +15,7 @@ double randMToN(double M, double N){
 void writeResults(int dim, int ndata, double* data, int* cluster_assign)
 {
   int i;
-  FILE* file;
+  FILE *file;
 
   file = fopen("data.txt", "w");
   fprintf(file, "%d\n", dim);
@@ -167,9 +167,10 @@ void execute_kmeans(int *train_labels, double *train_features, int *test_labels,
 
 void execute_LSH(int *train_labels, double *train_features, int *test_labels, double *test_features)
 {
-  int dim = FEATURE_DIM, ndata = TRAIN_SIZE, m = 3, i, j, z = 0;
-  int *num_clusters = &z; int correct_labeling_count = 0;
-  double w = 7;
+  int dim = FEATURE_DIM, ndata = TRAIN_SIZE,
+    m = 3, // hash size,
+    i, j, correct_labeling_count = 0, cluster_count = 0;
+  double w = 7.0;
 
   double *b = malloc(m * sizeof(double));
   for(i = 0; i < m; i++) {
@@ -188,14 +189,30 @@ void execute_LSH(int *train_labels, double *train_features, int *test_labels, do
   }
 
   printf("\nGenerating clusters via LSH...\n");
-  cluster *clusters = LSH(dim, ndata, train_features, m, r, b, w, num_clusters);
+  Tree clusters = LSH(dim, ndata, train_features, m, r, b, w);
 
-  printf("\nTotal cluster count = %d\n\n", *num_clusters);
+  cluster_count = get_cluster_count(clusters);
 
-  printf("Performing searches using test data...\n");
+  if(DEBUG) {
+    int *data_pts = malloc(ndata * sizeof(int));
+    for(i = 0; i < ndata; i++) { data_pts[i] = -1; }
+    verify_data_pts_clustered(clusters, data_pts, ndata);
+
+    for(i = 0; i < ndata; i++) {
+      if(data_pts[i] == -1) {
+        printf("\n** Point %d not clustered **\n", i);
+      }
+    }
+  }
+
+  printf("\nTotal cluster count = %d\n\n", cluster_count);
+
+  //if(DEBUG) { write_LSH_clusters_info(clusters, dim, m, w, cluster_count); }
+
+  printf("Performing searches using test data...\n\n");
 
   double *q_pt = malloc(dim * sizeof(double));
-  int k = 0;
+  int k = 0, pts_searched = 0;
   for(i = 0; i < TEST_SIZE; i++) {
     for(j = i*FEATURE_DIM; j < i*FEATURE_DIM+FEATURE_DIM; j++) {
       q_pt[k] = test_features[j];
@@ -205,12 +222,14 @@ void execute_LSH(int *train_labels, double *train_features, int *test_labels, do
 
     int *q_pt_hash = hash_q_pt(dim, q_pt, m, r, b, w);
 
-    search_clusters_for_apprx_neighbors(dim, train_features, train_labels, test_labels, q_pt,
-                                        q_pt_hash, i, clusters, m, &correct_labeling_count);
+    pts_searched += search_clusters_for_apprx_neighbors(dim, train_features, train_labels, test_labels, q_pt,
+                                                        q_pt_hash, i, clusters, m, &correct_labeling_count);
 
     free(q_pt);
     q_pt = malloc(dim * sizeof(double));
   }
+
+  printf("Average amount of points searched per query = %.1f\n", (double) pts_searched / (double) TEST_SIZE);
 
   printf("Accuracy of labeling = %.2f%%\n", ((double) correct_labeling_count / (double) TEST_SIZE) * 100);
 }

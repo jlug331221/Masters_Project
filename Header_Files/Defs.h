@@ -1,6 +1,8 @@
 #ifndef MNIST_KDTREE_KMEANS_LSH_DEFS_H
 #define MNIST_KDTREE_KMEANS_LSH_DEFS_H
 
+#define DEBUG             0
+
 #define PI                3.141592654
 #define INFINITY          987654321012.3
 #define TINY_DELTA        1.0e-05
