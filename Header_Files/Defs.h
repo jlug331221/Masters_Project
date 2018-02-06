@@ -1,7 +1,7 @@
 #ifndef MNIST_KDTREE_KMEANS_LSH_DEFS_H
 #define MNIST_KDTREE_KMEANS_LSH_DEFS_H
 
-#define DEBUG             0
+#define DEBUG             1
 
 #define PI                3.141592654
 #define INFINITY          987654321012.3

@@ -396,12 +396,18 @@ void execute_bkmeans_j(int *train_labels, double *train_features, int *test_labe
 
 void execute_bkmeans_z(int *train_labels, double *train_features, int *test_labels, double *test_features)
 {
-  int ndata = TRAIN_SIZE, dim = FEATURE_DIM, kk = 15, i, num_clusters = 0;
+  int ndata = 10000, dim = 2, kk = 128, i, num_clusters = 0;
 
-//  double *data = malloc(ndata * dim * sizeof(double));
-//  for(i = 0; i < ndata * dim; i++) {
-//    data[i] = randMToN(0, 100);
-//  }
+  double *data;
+  if(DEBUG) {
+    data = malloc(ndata * dim * sizeof(double));
+    for(i = 0; i < ndata * dim; i++) {
+      data[i] = randMToN(0, 100);
+    }
+  }
+  else {
+    data = train_features;
+  }
 
   int *cluster_size = malloc(kk * sizeof(double));
   int *cluster_start = malloc(kk * sizeof(double));
@@ -430,12 +436,12 @@ void execute_bkmeans_z(int *train_labels, double *train_features, int *test_labe
   double *cluster_ssd = malloc(kk * sizeof(double));
 
   printf("\nForming clusters via Bisecting K-means_z...\n\n");
-  num_clusters = bkmeans_z(10, kk, dim, 0, ndata, train_features,
+  num_clusters = bkmeans_z(10, kk, dim, 0, ndata, data,
                            cluster_assign, datum,
                            cluster_center, cluster_radius,
                            cluster_start, cluster_size, cluster_ssd);
 
-  //writeResults(dim, ndata, data, cluster_assign);
+  if(DEBUG) { writeResults(dim, ndata, data, cluster_assign); }
 
   printf("Number of clusters = %d\n", num_clusters);
 

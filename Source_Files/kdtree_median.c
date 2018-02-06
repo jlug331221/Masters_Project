@@ -306,7 +306,7 @@ int search_kdtree_hybrid(int dim, int ndata, double *data, int kk,
   dist_min = INFINITY ;
   for(i=istart; i<iend; i++) { /* loop thru all data in cluster k_min */
     for(j=0; j<dim; j++) datum[j] = data[i*dim+j] ;
-    tmp = calc_dist_square(dim, query, datum) ;
+    tmp = calc_dist_square_z(dim, query, datum) ;
     if(tmp<dist_min) { dist_min=tmp; i_min=i; }
   }
   n_pts = cluster_size[k_min] ;
@@ -320,7 +320,7 @@ int search_kdtree_hybrid(int dim, int ndata, double *data, int kk,
         istart = cluster_start[k];  iend = istart+cluster_size[k];
         for(i=istart; i<iend; i++) {
           for(j=0; j<dim; j++) datum[j] = data[i*dim+j] ;
-          tmp = calc_dist_square(dim, query, datum) ;
+          tmp = calc_dist_square_z(dim, query, datum) ;
           if(tmp<dist_min) { dist_min=tmp; i_min=i; }
         }
         n_pts += cluster_size[k] ;
@@ -331,7 +331,7 @@ int search_kdtree_hybrid(int dim, int ndata, double *data, int kk,
         istart = cluster_start[k];  iend = istart+cluster_size[k];
         for(i=istart; i<iend; i++) {
           for(j=0; j<dim; j++) datum[j] = data[i*dim+j] ;
-          tmp = calc_dist_square(dim, query, datum) ;
+          tmp = calc_dist_square_z(dim, query, datum) ;
           if(tmp<dist_min) { dist_min=tmp; i_min=i; }
         }
         n_pts += cluster_size[k] ;
