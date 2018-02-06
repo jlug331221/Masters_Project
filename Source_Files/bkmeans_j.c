@@ -23,8 +23,7 @@ int bisecting_kmeans(int dim, int ndata, double *data, int *labels, int k,
 
   cluster_size[cluster_x] = ndata;
 
-  int thresh_hold = 2000;
-  while(curr_cluster_count != k && num_iterations < thresh_hold) {
+  while(curr_cluster_count != k) {
     // Bisect cluster_x -> cluster with max SSE
     // Initially, there is only one cluster, so cluster_x is still cluster with max SSE
     set_new_cluster_centroids(dim, ndata, data, cluster_x, cluster_y,
@@ -54,7 +53,7 @@ int two_kmeans(int dim, int ndata, double *data, int cluster_x, int cluster_y,
                int *cluster_size, int *cluster_start, double *cluster_radius,
                double **cluster_centroid, int *cluster_assign)
 {
-  int i, numIterations = 0;
+  int i, num_iterations = 0;
   bool notFinishedClustering = true;
 
   int *prev_cluster_assign = malloc(ndata * sizeof(double));
@@ -62,8 +61,9 @@ int two_kmeans(int dim, int ndata, double *data, int cluster_x, int cluster_y,
     prev_cluster_assign[i] = -1;
   }
 
-  while(notFinishedClustering) {
-    numIterations++;
+  int thresh_hold = 3;
+  while(notFinishedClustering && num_iterations < thresh_hold) {
+    num_iterations++;
 
     // Assign data points to cluster_x or cluster_y
     for(i = 0; i < ndata; i++) {
@@ -99,7 +99,7 @@ int two_kmeans(int dim, int ndata, double *data, int cluster_x, int cluster_y,
     }
   }
 
-  return numIterations;
+  return num_iterations;
 }
 
 int kmeans_bkm(int dim, int ndata, double *data, int *labels, int k,
@@ -107,7 +107,7 @@ int kmeans_bkm(int dim, int ndata, double *data, int *labels, int k,
                double *cluster_radius, double **cluster_centroid,
                int *cluster_assign)
 {
-  int i, j, numIterations = 0;
+  int i, j, num_iterations = 0;
 
   int *prev_cluster_assign = malloc(ndata * sizeof(double));
   for (i = 0; i < ndata; i++) {
@@ -115,8 +115,8 @@ int kmeans_bkm(int dim, int ndata, double *data, int *labels, int k,
   }
 
   int thresh_hold = 1;
-  while (numIterations < thresh_hold) {
-    numIterations++;
+  while (num_iterations < thresh_hold) {
+    num_iterations++;
 
     // Assign data point to clusters and update centroids
     for (i = 0; i < ndata; i++) {
@@ -152,7 +152,7 @@ int kmeans_bkm(int dim, int ndata, double *data, int *labels, int k,
                          cluster_centroid, cluster_radius);
   }
 
-  return numIterations;
+  return num_iterations;
 }
 
 void set_new_cluster_centroids(int dim, int ndata, double *data, int cluster_x, int cluster_y,
@@ -172,18 +172,11 @@ void set_new_cluster_centroids(int dim, int ndata, double *data, int cluster_x, 
     }
   }
 
-//  srand(time(NULL));
   centroid_pt_x = cluster_x_pts[cluster_size[cluster_x] + (rand() / (RAND_MAX / (0 - cluster_size[cluster_x])))];
 
   for(j = 0; j < dim; j++) {
     cluster_centroid[cluster_x][j] = data[centroid_pt_x * dim + j];
   }
-
-//  printf("Centroid point for cluster_x = %d : (", centroid_pt_x+1);
-//  for(i = 0; i < dim; i++) {
-//    if(i == dim - 1) { printf("%lf)\n", cluster_centroid[cluster_x][i]); }
-//    else { printf("%lf, ", cluster_centroid[cluster_x][i]); }
-//  }
 
   // Second centroid is the furthest away point from centroid_pt_x in cluster_x
   for(i = 0; i < ndata; i++) {
@@ -205,12 +198,6 @@ void set_new_cluster_centroids(int dim, int ndata, double *data, int cluster_x, 
   for(j = 0; j < dim; j++) {
     cluster_centroid[cluster_y][j] = data[centroid_pt_y * dim + j];
   }
-
-//  printf("Centroid point for cluster_y = %d : (", centroid_pt_y+1);
-//  for(i = 0; i < dim; i++) {
-//    if(i == dim - 1) { printf("%lf)\n", cluster_centroid[cluster_y][i]); }
-//    else { printf("%lf, ", cluster_centroid[cluster_y][i]); }
-//  }
 
   free(cluster_x_pts);
 }

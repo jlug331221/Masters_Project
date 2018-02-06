@@ -326,16 +326,18 @@ void execute_kdtree_median(int *train_labels, double *train_features, int *test_
 
 void execute_bkmeans_j(int *train_labels, double *train_features, int *test_labels, double *test_features)
 {
-  int ndata = TRAIN_SIZE, dim = FEATURE_DIM, k = 355, i, j, correct_labeling_count = 0;
+  int ndata, dim, k, i, j, num_clusters = 0, correct_labeling_count = 0;
 
   double *data;
   if(DEBUG) {
-    data = malloc(dim * ndata * sizeof(double));
-    for(i = 0; i < dim * ndata; i++) {
+    ndata = 100000; dim = 2; k = 350;
+    data = malloc(ndata * dim * sizeof(double));
+    for(i = 0; i < ndata * dim; i++) {
       data[i] = randMToN(0, 100);
     }
   }
   else {
+    ndata = TRAIN_SIZE; dim = FEATURE_DIM; k = 10;
     data = train_features;
   }
 
@@ -374,40 +376,50 @@ void execute_bkmeans_j(int *train_labels, double *train_features, int *test_labe
 
   printf("\nNumber of iterations for bisecting K-means clustering = %d\n", numIterations);
 
-  //writeResults(dim, ndata, data, cluster_assign);
+  if(DEBUG) { writeResults(dim, ndata, data, cluster_assign); }
 
-  printf("\nPerforming searches using test data...\n");
+  if (! DEBUG) {
+    printf("\nPerforming searches using test data...\n");
 
-  double *query = malloc(dim * sizeof(double));
+    double *query = malloc(dim * sizeof(double));
 
-  int h = 0;
-  for (i = 0; i < TEST_SIZE; i++) {
-    for (j = i * FEATURE_DIM; j < i * FEATURE_DIM + FEATURE_DIM; j++) {
-      query[h] = test_features[j];
-      h++;
+    int h = 0;
+    for(i = 0; i < TEST_SIZE; i++) {
+      for(j = i * FEATURE_DIM; j < i * FEATURE_DIM + FEATURE_DIM; j++) {
+        query[h] = test_features[j];
+        h++;
+      }
+
+      h = 0;
+
+      search_clusters_bkm(dim, ndata, train_features, train_labels, test_labels,
+                          k, i, cluster_size, cluster_start, cluster_radius, cluster_centroid,
+                          query, &correct_labeling_count);
+
+      free(query);
+      query = malloc(dim * sizeof(double));
     }
 
-    h = 0;
-
-    search_clusters_bkm(dim, ndata, train_features, train_labels, test_labels,
-                        k, i, cluster_size, cluster_start, cluster_radius, cluster_centroid,
-                        query, &correct_labeling_count);
-
-    free(query);
-    query = malloc(dim * sizeof(double));
+    printf("Accuracy of labeling = %.2f%%\n", ((double) correct_labeling_count / (double) TEST_SIZE) * 100);
   }
-
-  printf("Accuracy of labeling = %.2f%%\n", ((double) correct_labeling_count / (double) TEST_SIZE) * 100);
 }
 
 void execute_bkmeans_z(int *train_labels, double *train_features, int *test_labels, double *test_features)
 {
-  int ndata = TRAIN_SIZE, dim = FEATURE_DIM, kk = 15, i, num_clusters = 0;
+  int ndata, dim, kk, i, j, num_clusters = 0, correct_labeling_count = 0;
 
-//  double *data = malloc(ndata * dim * sizeof(double));
-//  for(i = 0; i < ndata * dim; i++) {
-//    data[i] = randMToN(0, 100);
-//  }
+  double *data;
+  if(DEBUG) {
+    ndata = 100000; dim = 2; kk = 350;
+    data = malloc(ndata * dim * sizeof(double));
+    for(i = 0; i < ndata * dim; i++) {
+      data[i] = randMToN(0, 100);
+    }
+  }
+  else {
+    ndata = TRAIN_SIZE; dim = FEATURE_DIM; kk = 10;
+    data = train_features;
+  }
 
   int *cluster_size = malloc(kk * sizeof(double));
   int *cluster_start = malloc(kk * sizeof(double));
@@ -436,16 +448,16 @@ void execute_bkmeans_z(int *train_labels, double *train_features, int *test_labe
   double *cluster_ssd = malloc(kk * sizeof(double));
 
   printf("\nForming clusters via Bisecting K-means_z...\n\n");
-  num_clusters = bkmeans_z(10, kk, dim, 0, ndata, train_features,
+  num_clusters = bkmeans_z(10, kk, dim, 0, ndata, data,
                            cluster_assign, datum,
                            cluster_center, cluster_radius,
                            cluster_start, cluster_size, cluster_ssd);
 
-  //writeResults(dim, ndata, data, cluster_assign);
+  if(DEBUG) { writeResults(dim, ndata, data, cluster_assign); }
 
   printf("Number of clusters = %d\n", num_clusters);
 
-  //  printf("\nPerforming searches...\n");
+//  printf("\nPerforming searches...\n");
 //
 //  double *query = malloc(dim * sizeof(double));
 //  double *result_pt = malloc(dim * sizeof(double));
