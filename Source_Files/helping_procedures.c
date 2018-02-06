@@ -326,12 +326,18 @@ void execute_kdtree_median(int *train_labels, double *train_features, int *test_
 
 void execute_bkmeans_j(int *train_labels, double *train_features, int *test_labels, double *test_features)
 {
-  int ndata = TRAIN_SIZE, dim = FEATURE_DIM, k = 10, i, j, correct_labeling_count = 0;
+  int ndata = TRAIN_SIZE, dim = FEATURE_DIM, k = 355, i, j, correct_labeling_count = 0;
 
-//  double *data = malloc(dim * ndata * sizeof(double));
-//  for(i = 0; i < dim * ndata; i++) {
-//    data[i] = randMToN(0, 100);
-//  }
+  double *data;
+  if(DEBUG) {
+    data = malloc(dim * ndata * sizeof(double));
+    for(i = 0; i < dim * ndata; i++) {
+      data[i] = randMToN(0, 100);
+    }
+  }
+  else {
+    data = train_features;
+  }
 
   int *cluster_size = malloc(k * sizeof(double));
   int *cluster_start = malloc(k * sizeof(double));
@@ -362,7 +368,7 @@ void execute_bkmeans_j(int *train_labels, double *train_features, int *test_labe
   }
 
   printf("\nForming %d clusters via Bisecting K-means_j...\n", k);
-  int numIterations = bisecting_kmeans(dim, ndata, train_features, train_labels, k, cluster_size,
+  int numIterations = bisecting_kmeans(dim, ndata, data, train_labels, k, cluster_size,
                                        cluster_start, cluster_radius, cluster_centroid,
                                        cluster_assign);
 

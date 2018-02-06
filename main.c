@@ -56,8 +56,8 @@ int main(int argc, char **argv)
   read_binary_dataset("train.bin", TRAIN_SIZE, train_labels, train_features);
   read_binary_dataset("test.bin", TEST_SIZE, test_labels, test_features);
 
-  normalize_data(train_features, FEATURE_DIM, TRAIN_SIZE);
-  normalize_data(test_features, FEATURE_DIM, TEST_SIZE);
+//  normalize_data(train_features, FEATURE_DIM, TRAIN_SIZE);
+//  normalize_data(test_features, FEATURE_DIM, TEST_SIZE);
 
   if(strtol(argv[1], NULL, 0) == 1) { execute_kdtree(train_labels, train_features, test_labels, test_features); }
 

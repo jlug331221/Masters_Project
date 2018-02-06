@@ -1,3 +1,4 @@
+#include "../Header_Files/Defs.h"
 #include "../Header_Files/Headers.h"
 #include "../Header_Files/bkmeans_j.h"
 
@@ -22,7 +23,8 @@ int bisecting_kmeans(int dim, int ndata, double *data, int *labels, int k,
 
   cluster_size[cluster_x] = ndata;
 
-  while(curr_cluster_count != k) {
+  int thresh_hold = 2000;
+  while(curr_cluster_count != k && num_iterations < thresh_hold) {
     // Bisect cluster_x -> cluster with max SSE
     // Initially, there is only one cluster, so cluster_x is still cluster with max SSE
     set_new_cluster_centroids(dim, ndata, data, cluster_x, cluster_y,
@@ -404,7 +406,9 @@ int partition_bkm(int dim, int lo, int hi, double *data, int *labels, int *clust
 
     swap_cluster_assign_bkm(cluster_assign, i, j);
     swap_points_bkm(dim, i, j, data);
-    swap_labels_bkm(labels, i, j);
+    if(! DEBUG) {
+      swap_labels_bkm(labels, i, j);
+    }
   }
 }
 
