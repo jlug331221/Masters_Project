@@ -53,8 +53,8 @@ int main(int argc, char **argv)
   int *test_labels = malloc(sizeof(int) * TEST_SIZE);
   double *test_features = malloc(sizeof(double) * TEST_SIZE * FEATURE_DIM);
 
-  read_binary_dataset("train.bin", TRAIN_SIZE, train_labels, train_features);
-  read_binary_dataset("test.bin", TEST_SIZE, test_labels, test_features);
+  read_binary_dataset("MNIST_train.bin", TRAIN_SIZE, train_labels, train_features);
+  read_binary_dataset("MNIST_test.bin", TEST_SIZE, test_labels, test_features);
 
   normalize_data(train_features, FEATURE_DIM, TRAIN_SIZE);
   normalize_data(test_features, FEATURE_DIM, TEST_SIZE);

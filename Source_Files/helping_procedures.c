@@ -170,7 +170,7 @@ void execute_LSH(int *train_labels, double *train_features, int *test_labels, do
   int dim = FEATURE_DIM, ndata = TRAIN_SIZE,
     m = 3, // hash size,
     i, j, correct_labeling_count = 0, cluster_count = 0;
-  double w = 7.0;
+  double w = 6.0;
 
   double *b = malloc(m * sizeof(double));
   for(i = 0; i < m; i++) {
@@ -207,7 +207,7 @@ void execute_LSH(int *train_labels, double *train_features, int *test_labels, do
 
   printf("\nTotal cluster count = %d\n\n", cluster_count);
 
-  //if(DEBUG) { write_LSH_clusters_info(clusters, dim, m, w, cluster_count); }
+  if(DEBUG) { write_LSH_clusters_info(clusters, dim, m, w, cluster_count); }
 
   printf("Performing searches using test data...\n\n");
 
@@ -229,7 +229,7 @@ void execute_LSH(int *train_labels, double *train_features, int *test_labels, do
     q_pt = malloc(dim * sizeof(double));
   }
 
-  printf("Average amount of points searched per query = %.1f\n", (double) pts_searched / (double) TEST_SIZE);
+  printf("Average amount of points searched per query = %.2f\n", (double) pts_searched / (double) TEST_SIZE);
 
   printf("Accuracy of labeling = %.2f%%\n", ((double) correct_labeling_count / (double) TEST_SIZE) * 100);
 }
