@@ -14,7 +14,7 @@
 
 double* read_dataset(char *file_path, int size)
 {
-  int i;
+  int i, j, k = 0;
   FILE *f = fopen(file_path, "r");
 
   if(f == NULL) {
@@ -27,11 +27,15 @@ double* read_dataset(char *file_path, int size)
   char *value = malloc(256 * sizeof(char));
 
   for(i = 0; i < size; i++) {
-    // Read in data to value
-    fscanf(f, "%s", value);
-    data[i] = strtod(value, NULL);
+    for(j = 0; j < FEATURE_DIM + 3; j++) {
+      // Read in data to value
+      fscanf(f, "%s", value);
+      data[k] = strtod(value, NULL);
+      k++;
+    }
   }
 
+  free(value);
   fclose(f);
 
   return data;
@@ -93,12 +97,15 @@ int main()
   double *bio_train_data = malloc(TRAIN_SIZE * (FEATURE_DIM + 3) * sizeof(double));
   double *bio_test_data = malloc(TEST_SIZE * (FEATURE_DIM + 3) * sizeof(double));
 
-  printf("\nReading in data from binary files...\n");
+  printf("\nTest reading in data from binary files...\n");
 
   read_binary_dataset("BIO_train.bin", TRAIN_SIZE, bio_train_data);
   read_binary_dataset("BIO_test.bin", TEST_SIZE, bio_test_data);
 
   clock_t end = clock();
+
+  free(bio_train_data);
+  free(bio_test_data);
 
   printf("\nDone\n\n");
 
