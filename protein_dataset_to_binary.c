@@ -77,6 +77,7 @@ read_binary_dataset(char *file_path, int size, double *data)
 void generate_protein_homology_binary_datasets()
 {
   printf("\nReading in training and testing datasets...\n");
+
   double *bio_train_data = read_dataset("BIO_train.dat", TRAIN_SIZE);
   double *bio_test_data = read_dataset("BIO_test.dat", TEST_SIZE);
 
@@ -109,6 +110,6 @@ int main()
 
   printf("\nDone\n\n");
 
-  printf("Total time to read in data and convert to binary: %.2f secs\n",
+  printf("Total time to read in data, convert to binary and read in data from binary: %.2f secs\n",
          (double) (end - begin) / CLOCKS_PER_SEC);
 }

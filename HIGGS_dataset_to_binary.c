@@ -12,7 +12,7 @@
  *
  */
 
-double* read_train_dataset(char *file_path, int size)
+double* read_dataset(char *file_path, int size)
 {
   int i, j, k = 0;
   FILE *f = fopen(file_path, "r");
@@ -27,7 +27,7 @@ double* read_train_dataset(char *file_path, int size)
 
   for(i = 0; i < size; i++) {
     for(j = 0; j < FEATURE_DIM + 1; j++) {
-      if(j == FEATURE_DIM + 1 - 1) {
+      if(j == FEATURE_DIM) {
         // Last data value has no comma
         fscanf(f, "%s", value);
         data[k] = strtod(value, NULL);
@@ -63,7 +63,7 @@ void write_binary_dataset(char *file_path, double *data, size_t size)
   fclose(bf);
 }
 
-read_binary_dataset(char *file_path, int size, double *data)
+void read_binary_dataset(char *file_path, int size, double *data)
 {
   int i;
   FILE *bf = fopen(file_path, "rb");
@@ -83,7 +83,8 @@ read_binary_dataset(char *file_path, int size, double *data)
 void generate_HIGGS_binary_datasets()
 {
   printf("\nReading in training and testing datasets...\n");
-  double *HIGGS_train_data = read_train_dataset("HIGGS.csv", TRAIN_SIZE + TEST_SIZE);
+
+  double *HIGGS_train_data = read_dataset("HIGGS.csv", TRAIN_SIZE + TEST_SIZE);
 
   int i, test_size_chunk = TEST_SIZE * (FEATURE_DIM + 1), k = test_size_chunk;
   double *HIGGS_test_data = malloc(test_size_chunk * sizeof(double));
@@ -121,6 +122,6 @@ int main()
 
   printf("\nDone\n\n");
 
-  printf("Total time to read in data and convert to binary: %.2f secs\n",
+  printf("Total time to read in data, convert to binary and read in data from binary: %.2f secs\n",
          (double) (end - begin) / CLOCKS_PER_SEC);
 }
