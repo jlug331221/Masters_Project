@@ -110,6 +110,7 @@ int main(int argc, char **argv)
 
   if(strtol(argv[1], NULL, 0) == 1) { // LSH clustering
     if(strtol(argv[2], NULL, 0) == 1) { // MNIST data set is normalized before LSH clustering
+      printf("\nNormalizing data...\n");
       normalize_MNIST_data(train_feature_data, MNIST_FEATURE_DIM, MNIST_TRAIN_SIZE);
       //normalize_MNIST_data(test_feature_data, MNIST_FEATURE_DIM, MNIST_TEST_SIZE);
 
@@ -117,6 +118,7 @@ int main(int argc, char **argv)
     }
 
     if(strtol(argv[2], NULL, 0) == 2) { // BIO data set is normalized before LSH clustering
+      printf("\nNormalizing data...\n");
       normalize_BIO_data(train_feature_data, BIO_FEATURE_DIM, BIO_TRAIN_SIZE);
       //normalize_BIO_data(test_feature_data, BIO_FEATURE_DIM, BIO_TEST_SIZE);
 
@@ -124,8 +126,9 @@ int main(int argc, char **argv)
     }
 
     if(strtol(argv[2], NULL, 0) == 3) { // HIGGS data set is normalized before LSH clustering
+      printf("\nNormalizing data...\n");
       normalize_HIGGS_data(train_feature_data, HIGGS_FEATURE_DIM, HIGGS_TRAIN_SIZE);
-      normalize_HIGGS_data(train_feature_data, HIGGS_FEATURE_DIM, HIGGS_TEST_SIZE);
+      //normalize_HIGGS_data(test_feature_data, HIGGS_FEATURE_DIM, HIGGS_TEST_SIZE);
 
       execute_LSH(HIGGS_FEATURE_DIM, HIGGS_TRAIN_SIZE, train_feature_data, (int) strtol(argv[2], NULL, 0));
     }
