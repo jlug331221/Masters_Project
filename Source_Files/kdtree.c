@@ -1,7 +1,7 @@
 #include "../Header_Files/Headers.h"
 #include "../Header_Files/kdtree.h"
 
-int kdtree(int dim, int ndata, double *data, int *labels, int k,
+int kdtree(int dim, int ndata, double *data, int k,
            int *cluster_size, int *cluster_start, double **cluster_bdry,
            double **cluster_centroid, int *cluster_assign)
 {
@@ -10,14 +10,14 @@ int kdtree(int dim, int ndata, double *data, int *labels, int k,
 
   treeDepth = (int) floor(log2(k));
 
-  kdtreeHelper(dim, ndata, data, labels, treeDepth, currDepth, dLeft, dRight,
+  kdtreeHelper(dim, ndata, data, treeDepth, currDepth, dLeft, dRight,
                kLeft, kRight, cluster_size, cluster_start, cluster_bdry,
                cluster_centroid, cluster_assign);
 
   return 0;
 }
 
-void kdtreeHelper(int dim, int ndata, double *data, int *labels, int treeDepth,
+void kdtreeHelper(int dim, int ndata, double *data, int treeDepth,
                   int currDepth, int dLeft, int dRight, int kLeft,
                   int kRight, int *cluster_size, int *cluster_start,
                   double **cluster_bdry, double **cluster_centroid,
@@ -26,7 +26,7 @@ void kdtreeHelper(int dim, int ndata, double *data, int *labels, int treeDepth,
   int midCluster, midData;
 
   if(currDepth != treeDepth) {
-    bipartition(dim, dLeft, dRight, data, labels, &cluster_size[kLeft], &cluster_start[kLeft],
+    bipartition(dim, dLeft, dRight, data, &cluster_size[kLeft], &cluster_start[kLeft],
                 &cluster_bdry[kLeft], &cluster_centroid[kLeft],
                 cluster_assign);
   }
@@ -45,17 +45,17 @@ void kdtreeHelper(int dim, int ndata, double *data, int *labels, int treeDepth,
   midData = cluster_start[kLeft] + cluster_size[kLeft]; //midData = cluster_start[kLeft];
 
   // Recursive call on left
-  kdtreeHelper(dim, ndata, data, labels, treeDepth, currDepth + 1, dLeft, midData,
+  kdtreeHelper(dim, ndata, data, treeDepth, currDepth + 1, dLeft, midData,
                kLeft, midCluster, cluster_size, cluster_start, cluster_bdry,
                cluster_centroid, cluster_assign);
 
   // Recursive call on right
-  kdtreeHelper(dim, ndata, data, labels, treeDepth, currDepth + 1, midData, dRight,
+  kdtreeHelper(dim, ndata, data, treeDepth, currDepth + 1, midData, dRight,
                midCluster, kRight, cluster_size, cluster_start, cluster_bdry,
                cluster_centroid, cluster_assign);
 }
 
-int bipartition(int dim, int io, int im, double *data, int *labels,
+int bipartition(int dim, int io, int im, double *data,
                 int cluster_size[2], int cluster_start[2],
                 double *cluster_bdry[2], double *cluster_centroid[2],
                 int *cluster_assign)
@@ -96,7 +96,7 @@ int bipartition(int dim, int io, int im, double *data, int *labels,
     if(i >= j) { break; }
 
     kdtree_swap_points(dim, data, i, j);
-    kdtree_swap_labels(labels, i, j);
+    //kdtree_swap_labels(labels, i, j);
   }
 
   // Set cluster start

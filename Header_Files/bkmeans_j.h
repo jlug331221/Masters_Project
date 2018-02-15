@@ -4,7 +4,7 @@
 /**
  * Performs bisecting kmeans clustering on data.
  */
-int bisecting_kmeans(int dim, int ndata, double *data, int *labels, int k,
+int bisecting_kmeans(int dim, int ndata, double *data, int k,
                      int *cluster_size, int *cluster_start,
                      double *cluster_radius, double **cluster_centroid,
                      int *cluster_assign);
@@ -13,13 +13,12 @@ int bisecting_kmeans(int dim, int ndata, double *data, int *labels, int k,
  * Performs clustering of data using K-means algorithm for cluster_x and cluster_y.
  */
 int two_kmeans(int dim, int ndata, double *data, int cluster_x, int cluster_y,
-               int *cluster_size, int *cluster_start, double *cluster_radius,
-               double **cluster_centroid, int *cluster_assign);
+               int *cluster_size, double **cluster_centroid, int *cluster_assign);
 
 /**
  * Applies K-means clustering on data. This is the original K-means algorithm.
  */
-int kmeans_bkm(int dim, int ndata, double *data, int *labels, int k,
+int kmeans_bkm(int dim, int ndata, double *data, int k,
                int *cluster_size, int *cluster_start,
                double *cluster_radius, double **cluster_centroid,
                int *cluster_assign);
@@ -50,10 +49,12 @@ void assignPtToCluster_bkm(int dim, int totalClusters, int data_pt, double *data
                            double **cluster_centroid, int *cluster_assign);
 
 /**
- * Assign data_pt to closest cluster centroid (either cluster_x or cluster_y).
+ * Assign data_pt to closest cluster centroid (either cluster_x or cluster_y) if
+ * cluster_assign[data_pt] != prev_cluster_assign[data_pt].
  */
 void two_assignPtToCluster(int dim, int cluster_x, int cluster_y, int data_pt, double *data,
-                           double **cluster_centroid, int *cluster_assign);
+                           double **cluster_centroid, int *cluster_assign,
+                           int *prev_cluster_assign);
 
 /**
  * Updates cluster centroids by calculating the mean of cluster_x and cluster_y.
@@ -87,14 +88,14 @@ bool clusterAssignmentsChanged_bkm(int ndata, int *cluster_assign, int *prev_clu
 void setPrevClusterAssignments_bkm(int ndata, int *cluster_assign, int *prev_cluster_assign);
 
 /**
- * Perform quicksort on cluster_assign, swapping labels and data accordingly.
+ * Perform quicksort on cluster_assign, swapping data accordingly.
  */
-void quick_sort_data_bkm(int dim, int lo, int hi, double *data, int *labels, int *cluster_assign);
+void quick_sort_data_bkm(int dim, int lo, int hi, double *data, int *cluster_assign);
 
 /**
  * Hoare partition - used for quick_sort_data_bkm.
  */
-int partition_bkm(int dim, int lo, int hi, double *data, int *labels, int *cluster_assign);
+int partition_bkm(int dim, int lo, int hi, double *data, int *cluster_assign);
 
 /**
  * Swap cluster[i] and cluster[j].

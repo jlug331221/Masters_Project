@@ -4,7 +4,7 @@
 /**
  * Builds a kd-tree of k clusters given the initial data set data.
  */
-int kdtree(int dim, int ndata, double *data, int *labels, int k,
+int kdtree(int dim, int ndata, double *data, int k,
            int *cluster_size, int *cluster_start, double **cluster_bdry,
            double **cluster_centroid, int *cluster_assign);
 
@@ -14,7 +14,7 @@ int kdtree(int dim, int ndata, double *data, int *labels, int k,
  *
  * Partitions data of dim dimensions and assigns clusters.
  */
-void kdtreeHelper(int dim, int ndata, double *data, int *labels, int treeDepth,
+void kdtreeHelper(int dim, int ndata, double *data, int treeDepth,
                   int currDepth, int dLeft, int dRight, int kLeft,
                   int kRight, int *cluster_size, int *cluster_start,
                   double **cluster_bdry, double **cluster_centroid,
@@ -23,7 +23,7 @@ void kdtreeHelper(int dim, int ndata, double *data, int *labels, int treeDepth,
 /**
  * Partitions data using mean (centroid) of the highest dimension in data.
  */
-int bipartition(int dim, int io, int im, double *data, int *labels,
+int bipartition(int dim, int io, int im, double *data,
                 int cluster_size[2], int cluster_start[2],
                 double *cluster_bdry[2], double *cluster_centroid[2],
                 int *cluster_assign);

@@ -3,9 +3,9 @@
 
 void execute_LSH(int dim, int train_size, double *train_data, int data_set);
 
-void execute_kdtree(int *train_labels, double *train_features, int *test_labels, double *test_features);
+void execute_kdtree(int dim, int k, int train_size, double *train_data, int data_set);
 
-void execute_bkmeans_j(int *train_labels, double * train_features, int *test_labels, double *test_features);
+void execute_bkmeans_j(int dim, int k, int train_size, double *train_data, int data_set);
 
 void execute_kdtree_median(int *train_labels, double *train_features, int *test_labels, double *test_features);
 

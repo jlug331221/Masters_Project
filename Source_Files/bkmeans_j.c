@@ -2,7 +2,7 @@
 #include "../Header_Files/Headers.h"
 #include "../Header_Files/bkmeans_j.h"
 
-int bisecting_kmeans(int dim, int ndata, double *data, int *labels, int k,
+int bisecting_kmeans(int dim, int ndata, double *data, int k,
                      int *cluster_size, int *cluster_start,
                      double *cluster_radius, double **cluster_centroid,
                      int *cluster_assign)
@@ -21,17 +21,16 @@ int bisecting_kmeans(int dim, int ndata, double *data, int *labels, int k,
     cluster_assign[i] = cluster_x;
   }
 
+  // Bisect cluster_x -> cluster with max SSE
+  // Initially, there is only one cluster, so cluster_x is still cluster with max SSE
   cluster_size[cluster_x] = ndata;
 
   while(curr_cluster_count != k) {
-    // Bisect cluster_x -> cluster with max SSE
-    // Initially, there is only one cluster, so cluster_x is still cluster with max SSE
     set_new_cluster_centroids(dim, ndata, data, cluster_x, cluster_y,
                               cluster_centroid, cluster_assign, cluster_size);
 
     num_iterations += two_kmeans(dim, ndata, data, cluster_x, cluster_y,
-                                 cluster_size, cluster_start, cluster_radius,
-                                 cluster_centroid, cluster_assign);
+                                 cluster_size, cluster_centroid, cluster_assign);
 
     cluster_with_max_SSE = get_max_SSE(dim, ndata, data, k, cluster_centroid,
                                        cluster_sse, cluster_assign);
@@ -42,7 +41,7 @@ int bisecting_kmeans(int dim, int ndata, double *data, int *labels, int k,
     curr_cluster_count++;
   }
 
-  num_iterations += kmeans_bkm(dim, ndata, data, labels, k,
+  num_iterations += kmeans_bkm(dim, ndata, data, k,
                                cluster_size, cluster_start, cluster_radius,
                                cluster_centroid, cluster_assign);
 
@@ -50,18 +49,16 @@ int bisecting_kmeans(int dim, int ndata, double *data, int *labels, int k,
 }
 
 int two_kmeans(int dim, int ndata, double *data, int cluster_x, int cluster_y,
-               int *cluster_size, int *cluster_start, double *cluster_radius,
-               double **cluster_centroid, int *cluster_assign)
+               int *cluster_size, double **cluster_centroid, int *cluster_assign)
 {
-  int i, num_iterations = 0;
+  int i, num_iterations = 0, thresh_hold = 2;
   bool notFinishedClustering = true;
 
-  int *prev_cluster_assign = malloc(ndata * sizeof(double));
+  int *prev_cluster_assign = malloc(ndata * sizeof(int));
   for(i = 0; i < ndata; i++) {
     prev_cluster_assign[i] = -1;
   }
 
-  int thresh_hold = 3;
   while(notFinishedClustering && num_iterations < thresh_hold) {
     num_iterations++;
 
@@ -70,7 +67,7 @@ int two_kmeans(int dim, int ndata, double *data, int cluster_x, int cluster_y,
       // Only check points that are in cluster_x -> cluster with max SSE
       if(cluster_assign[i] == cluster_x || cluster_assign[i] == cluster_y) {
         two_assignPtToCluster(dim, cluster_x, cluster_y, i, data, cluster_centroid,
-                              cluster_assign);
+                              cluster_assign, prev_cluster_assign);
       }
     }
 
@@ -92,7 +89,9 @@ int two_kmeans(int dim, int ndata, double *data, int cluster_x, int cluster_y,
       notFinishedClustering = false;
     }
     else {
-      setPrevClusterAssignments_bkm(ndata, cluster_assign, prev_cluster_assign);
+      if(num_iterations < thresh_hold) {
+        setPrevClusterAssignments_bkm(ndata, cluster_assign, prev_cluster_assign);
+      }
 
       two_updateClusterCentroids(dim, cluster_x, cluster_y, ndata, data, cluster_centroid,
                                  cluster_size, cluster_assign);
@@ -102,19 +101,20 @@ int two_kmeans(int dim, int ndata, double *data, int cluster_x, int cluster_y,
   return num_iterations;
 }
 
-int kmeans_bkm(int dim, int ndata, double *data, int *labels, int k,
+int kmeans_bkm(int dim, int ndata, double *data, int k,
                int *cluster_size, int *cluster_start,
                double *cluster_radius, double **cluster_centroid,
                int *cluster_assign)
 {
-  int i, j, num_iterations = 0;
+  int i, j, num_iterations = 0, thresh_hold = 1, *prev_cluster_assign = NULL;
 
-  int *prev_cluster_assign = malloc(ndata * sizeof(double));
-  for (i = 0; i < ndata; i++) {
-    prev_cluster_assign[i] = -1;
+  if(thresh_hold > 1) {
+    prev_cluster_assign = malloc(ndata * sizeof(double));
+    for (i = 0; i < ndata; i++) {
+      prev_cluster_assign[i] = -1;
+    }
   }
 
-  int thresh_hold = 1;
   while (num_iterations < thresh_hold) {
     num_iterations++;
 
@@ -128,7 +128,7 @@ int kmeans_bkm(int dim, int ndata, double *data, int *labels, int k,
       cluster_size[i] = 0;
     }
 
-    // Assign cluster sizes
+    // Set cluster sizes
     for (i = 0; i < ndata; i++) {
       for (j = 0; j < k; j++) {
         if (cluster_assign[i] == j) {
@@ -137,13 +137,16 @@ int kmeans_bkm(int dim, int ndata, double *data, int *labels, int k,
       }
     }
 
-    setPrevClusterAssignments_bkm(ndata, cluster_assign, prev_cluster_assign);
+    if(thresh_hold > 1) {
+      setPrevClusterAssignments_bkm(ndata, cluster_assign, prev_cluster_assign);
+    }
 
     updateClusterCentroids_bkm(dim, k, ndata, data, cluster_centroid,
                                cluster_size, cluster_assign);
   }
 
-  quick_sort_data_bkm(dim, 0, ndata, data, labels, cluster_assign);
+  printf("\nSorting the data...\n");
+  quick_sort_data_bkm(dim, 0, ndata, data, cluster_assign);
 
   setClusterStart_bkm(k, cluster_size, cluster_start);
 
@@ -163,7 +166,6 @@ void set_new_cluster_centroids(int dim, int ndata, double *data, int cluster_x, 
 
   int *cluster_x_pts = malloc(cluster_size[cluster_x] * sizeof(int));
 
-  // centroid_pt_x is randomly chosen from the data set of cluster_x
   j = 0;
   for(i = 0; i < ndata; i++) {
     if(cluster_assign[i] == cluster_x) {
@@ -172,6 +174,7 @@ void set_new_cluster_centroids(int dim, int ndata, double *data, int cluster_x, 
     }
   }
 
+  // centroid_pt_x is randomly chosen from the data set of cluster_x
   centroid_pt_x = cluster_x_pts[cluster_size[cluster_x] + (rand() / (RAND_MAX / (0 - cluster_size[cluster_x])))];
 
   for(j = 0; j < dim; j++) {
@@ -263,28 +266,31 @@ void assignPtToCluster_bkm(int dim, int totalClusters, int data_pt, double *data
 }
 
 void two_assignPtToCluster(int dim, int cluster_x, int cluster_y, int data_pt, double *data,
-                           double **cluster_centroid, int *cluster_assign)
+                           double **cluster_centroid, int *cluster_assign,
+                           int *prev_cluster_assign)
 {
   int j;
   double distance_to_cluster_x = 0.0, distance_to_cluster_y = 0.0;
 
-  for(j = 0; j < dim; j++) {
-    distance_to_cluster_x += (cluster_centroid[cluster_x][j] - data[data_pt * dim + j]) *
-                             (cluster_centroid[cluster_x][j] - data[data_pt * dim + j]);
-  }
-  distance_to_cluster_x = sqrt(distance_to_cluster_x);
+  if(cluster_assign[data_pt] != prev_cluster_assign[data_pt]) {
+    for(j = 0; j < dim; j++) {
+      distance_to_cluster_x += (cluster_centroid[cluster_x][j] - data[data_pt * dim + j]) *
+                               (cluster_centroid[cluster_x][j] - data[data_pt * dim + j]);
+    }
+    distance_to_cluster_x = sqrt(distance_to_cluster_x);
 
-  for(j = 0; j < dim; j++) {
-    distance_to_cluster_y += (cluster_centroid[cluster_y][j] - data[data_pt * dim + j]) *
-                             (cluster_centroid[cluster_y][j] - data[data_pt * dim + j]);
-  }
-  distance_to_cluster_y = sqrt(distance_to_cluster_y);
+    for(j = 0; j < dim; j++) {
+      distance_to_cluster_y += (cluster_centroid[cluster_y][j] - data[data_pt * dim + j]) *
+                               (cluster_centroid[cluster_y][j] - data[data_pt * dim + j]);
+    }
+    distance_to_cluster_y = sqrt(distance_to_cluster_y);
 
-  if(distance_to_cluster_x < distance_to_cluster_y) {
-    cluster_assign[data_pt] = cluster_x;
-  }
-  else {
-    cluster_assign[data_pt] = cluster_y;
+    if(distance_to_cluster_x < distance_to_cluster_y) {
+      cluster_assign[data_pt] = cluster_x;
+    }
+    else {
+      cluster_assign[data_pt] = cluster_y;
+    }
   }
 }
 
@@ -363,16 +369,16 @@ void setPrevClusterAssignments_bkm(int ndata, int *cluster_assign, int *prev_clu
   }
 }
 
-void quick_sort_data_bkm(int dim, int lo, int hi, double *data, int *labels, int *cluster_assign)
+void quick_sort_data_bkm(int dim, int lo, int hi, double *data, int *cluster_assign)
 {
   if(lo < hi) {
-    int pivot = partition_bkm(dim, lo, hi, data, labels, cluster_assign);
-    quick_sort_data_bkm(dim, lo, pivot, data, labels, cluster_assign);
-    quick_sort_data_bkm(dim, pivot+1, hi, data, labels, cluster_assign);
+    int pivot = partition_bkm(dim, lo, hi, data, cluster_assign);
+    quick_sort_data_bkm(dim, lo, pivot, data, cluster_assign);
+    quick_sort_data_bkm(dim, pivot+1, hi, data, cluster_assign);
   }
 }
 
-int partition_bkm(int dim, int lo, int hi, double *data, int *labels, int *cluster_assign)
+int partition_bkm(int dim, int lo, int hi, double *data, int *cluster_assign)
 {
   int p = cluster_assign[lo];
   int i = lo - 1;
@@ -393,9 +399,8 @@ int partition_bkm(int dim, int lo, int hi, double *data, int *labels, int *clust
 
     swap_cluster_assign_bkm(cluster_assign, i, j);
     swap_points_bkm(dim, i, j, data);
-    if(! DEBUG) {
-      swap_labels_bkm(labels, i, j);
-    }
+
+    //swap_labels_bkm(labels, i, j);
   }
 }
 
