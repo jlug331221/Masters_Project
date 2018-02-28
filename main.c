@@ -13,9 +13,9 @@ void print_execution_error_message()
   printf("\nExecute using the following: ./main <clustering> <dataset>\n\n");
 
   printf("The second argument specifies the algorithm used to cluster the data.\n\n");
-  printf("\t1: LSH\n\t2: kdtree\n\t3: BKmeans_j\n\t4: kdtree_median\n\t5: BKmeans_z\n");
+  printf("\t1: LSH\n\t2: Kdtree\n\t3: BKmeans\n");
 
-  printf("\nThe the third argument specifies the dataset to cluster.\n\n");
+  printf("\nThe third argument specifies the dataset to cluster.\n\n");
   printf("\t1: MNIST\n\t2: BIO\n\t3: HIGGS\n\n");
 }
 
@@ -93,9 +93,13 @@ void fetch_datasets(int data_set, double **train_feature_data, double **test_fea
 
 /**
  * Perform clustering_algorithm on data_set and normalize the data set if normalize_data == 'y'.
+ *
+ * Then, perform search queries against the clustered data if desired by the user.
  */
-void perform_clustering(int clustering_algorithm, int data_set, char normalize_data,
-                        double *train_feature_data, double *test_feature_data)
+void perform_clustering_and_search_queries(int clustering_algorithm, int data_set,
+                                           char normalize_data,
+                                           double *train_feature_data, double *test_feature_data,
+                                           int *train_non_feature_data, int *test_non_feature_data)
 {
   int k = -1;
 
@@ -119,15 +123,24 @@ void perform_clustering(int clustering_algorithm, int data_set, char normalize_d
 
   if(clustering_algorithm == 1) { // LSH clustering
     if(data_set == 1) { // MNIST data set is normalized before LSH clustering
-      execute_LSH(MNIST_FEATURE_DIM, MNIST_TRAIN_SIZE, train_feature_data, data_set);
+      execute_LSH(data_set, MNIST_FEATURE_DIM,
+                  MNIST_TRAIN_SIZE, train_feature_data,
+                  MNIST_TEST_SIZE, test_feature_data,
+                  train_non_feature_data, test_non_feature_data);
     }
 
     if(data_set == 2) { // BIO data set is normalized before LSH clustering
-      execute_LSH(BIO_FEATURE_DIM, BIO_TRAIN_SIZE, train_feature_data, data_set);
+      execute_LSH(data_set, BIO_FEATURE_DIM,
+                  BIO_TRAIN_SIZE, train_feature_data,
+                  BIO_TEST_SIZE, test_feature_data,
+                  train_non_feature_data, test_non_feature_data);
     }
 
     if(data_set == 3) { // HIGGS data set is normalized before LSH clustering
-      execute_LSH(HIGGS_FEATURE_DIM, HIGGS_TRAIN_SIZE, train_feature_data, data_set);
+      execute_LSH(data_set, HIGGS_FEATURE_DIM,
+                  HIGGS_TRAIN_SIZE, train_feature_data,
+                  HIGGS_TEST_SIZE, test_feature_data,
+                  train_non_feature_data, test_non_feature_data);
     }
   }
 
@@ -136,15 +149,24 @@ void perform_clustering(int clustering_algorithm, int data_set, char normalize_d
     scanf("%d", &k);
 
     if(data_set == 1) { // MNIST data set
-      execute_kdtree(MNIST_FEATURE_DIM, k, MNIST_TRAIN_SIZE, train_feature_data, data_set);
+      execute_kdtree(data_set, MNIST_FEATURE_DIM, k,
+                     MNIST_TRAIN_SIZE, train_feature_data,
+                     MNIST_TEST_SIZE, test_feature_data,
+                     train_non_feature_data, test_non_feature_data);
     }
 
     if(data_set == 2) { // BIO data set
-      execute_kdtree(BIO_FEATURE_DIM, k, BIO_TRAIN_SIZE, train_feature_data, data_set);
+      execute_kdtree(data_set, BIO_FEATURE_DIM, k,
+                     BIO_TRAIN_SIZE, train_feature_data,
+                     BIO_TEST_SIZE, test_feature_data,
+                     train_non_feature_data, test_non_feature_data);
     }
 
     if(data_set == 3) { // HIGGS data set
-      execute_kdtree(HIGGS_FEATURE_DIM, k, HIGGS_TRAIN_SIZE, train_feature_data, data_set);
+      execute_kdtree(data_set, HIGGS_FEATURE_DIM, k,
+                     HIGGS_TRAIN_SIZE, train_feature_data,
+                     HIGGS_TEST_SIZE, test_feature_data,
+                     train_non_feature_data, test_non_feature_data);
     }
   }
 
@@ -153,22 +175,32 @@ void perform_clustering(int clustering_algorithm, int data_set, char normalize_d
     scanf("%d", &k);
 
     if(data_set == 1) { // MNIST data set
-      execute_bkmeans_j(MNIST_FEATURE_DIM, k, MNIST_TRAIN_SIZE, train_feature_data, data_set);
+      execute_bkmeans_j(data_set, MNIST_FEATURE_DIM, k,
+                        MNIST_TRAIN_SIZE, train_feature_data,
+                        MNIST_TEST_SIZE, test_feature_data,
+                        train_non_feature_data, test_non_feature_data);
     }
 
     if(data_set == 2) { // BIO data set
-      execute_bkmeans_j(BIO_FEATURE_DIM, k, BIO_TRAIN_SIZE, train_feature_data, data_set);
+      execute_bkmeans_j(data_set, BIO_FEATURE_DIM, k,
+                        BIO_TRAIN_SIZE, train_feature_data,
+                        BIO_TEST_SIZE, test_feature_data,
+                        train_non_feature_data, test_non_feature_data);
     }
 
     if(data_set == 3) { // HIGGS data set
-      execute_bkmeans_j(HIGGS_FEATURE_DIM, k, HIGGS_TRAIN_SIZE, train_feature_data, data_set);
+      execute_bkmeans_j(data_set, HIGGS_FEATURE_DIM, k,
+                        HIGGS_TRAIN_SIZE, train_feature_data,
+                        HIGGS_TEST_SIZE, test_feature_data,
+                        train_non_feature_data, test_non_feature_data);
     }
   }
 }
 
 int main(int argc, char **argv)
 {
-  if(argc < 3 || strtol(argv[1], NULL, 0) > 6 || strtol(argv[1], NULL, 0) <= 0) {
+  if(argc < 3 || strtol(argv[1], NULL, 0) >= 4 || strtol(argv[1], NULL, 0) <= 0 ||
+      strtol(argv[2], NULL, 0) >= 4 || strtol(argv[2], NULL, 0) <= 0) {
     print_execution_error_message();
     return 1;
   }
@@ -194,10 +226,10 @@ int main(int argc, char **argv)
   fetch_datasets(data_set, &train_feature_data, &test_feature_data,
                    &train_non_feature_data, &test_non_feature_data);
 
-  perform_clustering(clustering_algorithm, data_set, normalize_data, train_feature_data, test_feature_data);
-
-  //if(strtol(argv[1], NULL, 0) == 4) { execute_kdtree_median(test_labels, train_data, test_labels, test_data); }
-  //if(strtol(argv[1], NULL, 0) == 5) { execute_bkmeans_z(train_labels, train_data, test_labels, test_data); }
+  perform_clustering_and_search_queries(clustering_algorithm, data_set,
+                                        normalize_data,
+                                        train_feature_data, test_feature_data,
+                                        train_non_feature_data, test_non_feature_data);
 
   clock_t end = clock();
 

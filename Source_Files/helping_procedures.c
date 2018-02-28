@@ -32,7 +32,10 @@ void writeResults(int dim, int ndata, double* data, int* cluster_assign)
   fclose(file);
 }
 
-void execute_LSH(int dim, int train_size, double *train_data, int data_set)
+void execute_LSH(int data_set, int dim,
+                 int train_size, double *train_data,
+                 int test_size, double *test_data,
+                 int *train_non_feature_data, int *test_non_feature_data)
 {
   // m is the hash size
   int m, i, j, correct_labeling_count = 0, cluster_count = 0;
@@ -62,49 +65,27 @@ void execute_LSH(int dim, int train_size, double *train_data, int data_set)
   Tree clusters = LSH(dim, train_size, train_data, m, r, b, w);
 
   cluster_count = get_cluster_count(clusters);
+  printf("\nLSH generated %d clusters.\n", cluster_count);
 
   if(DEBUG) {
     int *data_pts = malloc(train_size * sizeof(int));
-    for(i = 0; i < train_size; i++) { data_pts[i] = -1; }
+    for (i = 0; i < train_size; i++) { data_pts[i] = -1; }
     verify_data_pts_clustered(clusters, data_pts, train_size);
 
-    for(i = 0; i < train_size; i++) {
-      if(data_pts[i] == -1) {
+    for (i = 0; i < train_size; i++) {
+      if (data_pts[i] == -1) {
         printf("\n** Point %d not clustered **\n", i);
       }
     }
+
+    write_LSH_clusters_info(clusters, dim, m, w, cluster_count);
   }
-
-  printf("\nTotal cluster count = %d\n\n", cluster_count);
-
-  if(DEBUG) { write_LSH_clusters_info(clusters, dim, m, w, cluster_count); }
-
-//  printf("Performing searches using test data...\n\n");
-//
-//  double *q_pt = malloc(dim * sizeof(double));
-//  int k = 0, pts_searched = 0;
-//  for(i = 0; i < TEST_SIZE; i++) {
-//    for(j = i*FEATURE_DIM; j < i*FEATURE_DIM+FEATURE_DIM; j++) {
-//      q_pt[k] = test_features[j];
-//      k++;
-//    }
-//    k = 0;
-//
-//    int *q_pt_hash = hash_q_pt(dim, q_pt, m, r, b, w);
-//
-//    pts_searched += search_clusters_for_apprx_neighbors(dim, train_features, train_labels, test_labels, q_pt,
-//                                                        q_pt_hash, i, clusters, m, &correct_labeling_count);
-//
-//    free(q_pt);
-//    q_pt = malloc(dim * sizeof(double));
-//  }
-//
-//  printf("Average amount of points searched per query = %.2f\n", (double) pts_searched / (double) TEST_SIZE);
-//
-//  printf("Accuracy of labeling = %.2f%%\n", ((double) correct_labeling_count / (double) TEST_SIZE) * 100);
 }
 
-void execute_kdtree(int dim, int k, int train_size, double *train_data, int data_set)
+void execute_kdtree(int data_set, int dim, int k,
+                    int train_size, double *train_data,
+                    int test_size, double *test_data,
+                    int *train_non_feature_data, int *test_non_feature_data)
 {
   int i, j, correct_labeling_count = 0;
 
@@ -151,32 +132,12 @@ void execute_kdtree(int dim, int k, int train_size, double *train_data, int data
          cluster_centroid, cluster_assign);
 
   printf("\nKDTree clustering complete.\n");
-
-//  printf("\nPerforming searches using test data...\n");
-//
-//  double *query = malloc(dim * sizeof(double));
-//
-//  int h = 0;
-//  for(i = 0; i < TEST_SIZE; i++) {
-//    for(j = i * FEATURE_DIM; j < i * FEATURE_DIM + FEATURE_DIM; j++) {
-//      query[h] = test_features[j];
-//      h++;
-//    }
-//
-//    h = 0;
-//
-//    search_kdtree(dim, ndata, train_features, train_labels, test_labels,
-//                  k, i, cluster_size, cluster_start, cluster_bdry,
-//                  query, &correct_labeling_count);
-//
-//    free(query);
-//    query = malloc(dim * sizeof(double));
-//  }
-//
-//  printf("Accuracy of labeling = %.2f%%\n", ((double) correct_labeling_count / (double) TEST_SIZE) * 100);
 }
 
-void execute_bkmeans_j(int dim, int k, int train_size, double *train_data, int data_set)
+void execute_bkmeans_j(int data_set, int dim, int k,
+                       int train_size, double *train_data,
+                       int test_size, double *test_data,
+                       int *train_non_feature_data, int *test_non_feature_data)
 {
   int i, j, num_clusters = 0, correct_labeling_count = 0, num_iterations = 0;
 
@@ -228,210 +189,7 @@ void execute_bkmeans_j(int dim, int k, int train_size, double *train_data, int d
                                          cluster_assign);
   }
 
-
-
   printf("\nNumber of iterations for bisecting K-means clustering = %d\n", num_iterations);
-
-//  if (! DEBUG) {
-//    printf("\nPerforming searches using test data...\n");
-//
-//    double *query = malloc(dim * sizeof(double));
-//
-//    int h = 0;
-//    for(i = 0; i < TEST_SIZE; i++) {
-//      for(j = i * FEATURE_DIM; j < i * FEATURE_DIM + FEATURE_DIM; j++) {
-//        query[h] = test_features[j];
-//        h++;
-//      }
-//
-//      h = 0;
-//
-//      search_clusters_bkm(dim, ndata, train_features, train_labels, test_labels,
-//                          k, i, cluster_size, cluster_start, cluster_radius, cluster_centroid,
-//                          query, &correct_labeling_count);
-//
-//      free(query);
-//      query = malloc(dim * sizeof(double));
-//    }
-//
-//    printf("Accuracy of labeling = %.2f%%\n", ((double) correct_labeling_count / (double) TEST_SIZE) * 100);
-//  }
-}
-
-void execute_kdtree_median(int *train_labels, double *train_features, int *test_labels, double *test_features)
-{
-  int ndata = 1000, dim = 2, kk = 16, i, j;
-
-  double *data = malloc(ndata * dim * sizeof(double));
-  for(i = 0; i < ndata * dim; i++) {
-    data[i] = randMToN(0, 100);
-  }
-
-  int *cluster_assign = malloc(ndata * sizeof(cluster_assign));
-  int *cluster_size = malloc(kk * sizeof(cluster_size));
-  int *cluster_start = malloc(kk * sizeof(cluster_start));
-
-  // Initialize cluster assignments
-  for(i = 0; i < ndata; i++) {
-    cluster_assign[i] = -1;
-  }
-
-  // Initialize cluster start and cluster size
-  for(i = 0; i < kk; i++) {
-    cluster_size[i] = 0;
-    cluster_start[i] = 0;
-  }
-
-  double **cluster_bdry = malloc(kk * sizeof(double*));
-  double **cluster_centroid = malloc(kk * sizeof(double*));
-  for(i = 0; i < kk; i++) {
-    cluster_bdry[i] = malloc((dim*2) * sizeof(double));
-    cluster_centroid[i] = malloc(dim * sizeof(double));
-  }
-
-  // Initialize cluster boundaries
-  for(i = 0; i < kk; i++) {
-    for(j = 0; j < dim*2; j++) {
-      if(j % 2 == 0) { cluster_bdry[i][j] = (double) INT_MAX; }
-      else { cluster_bdry[i][j] = (double) INT_MIN; }
-    }
-  }
-
-  // Initialize cluster centroids
-  for(i = 0; i < kk; i++) {
-    for(j = 0; j < dim; j++) {
-      cluster_centroid[i][j] = 0.0;
-    }
-  }
-
-  double *buf = malloc(ndata * sizeof(double));
-  double *datum = malloc(dim * sizeof(double));
-
-  printf("\nBuilding KDTree (median)...\n");
-  kdtree_hybrid(dim, ndata, data, kk,
-                cluster_start, cluster_size,
-                cluster_bdry, cluster_centroid,
-                cluster_assign, datum, buf);
-
-  writeResults(dim, ndata, data, cluster_assign);
-
-//  printf("\nPerforming searches...\n");
-//
-//  double *query = malloc(dim * sizeof(double));
-//  double *result_pt = malloc(dim * sizeof(double));
-//
-//  int h = 0, pts_searched;
-//  for(i = 0; i < TEST_SIZE; i++) {
-//    pts_searched = 0;
-//
-//    for(j = i * FEATURE_DIM; j < i * FEATURE_DIM + FEATURE_DIM; j++) {
-//      query[h] = test_features[j];
-//      h++;
-//    }
-//
-//    h = 0;
-//
-//    pts_searched = search_kdtree_hybrid(dim, ndata, train_features, kk,
-//                                        cluster_start, cluster_size, cluster_bdry,
-//                                        query, result_pt);
-//
-//    //if(i == 999 || i == 1999 || i == 2999 || i == 3999 || i == 4999) {
-//    printf("%d.\tpoints searched = %d\n", i+1, pts_searched);
-//    //}
-//
-//    free(query);
-//    free(result_pt);
-//    query = malloc(dim * sizeof(double));
-//    result_pt = malloc(dim * sizeof(double));
-//  }
-
-  printf("\n");
-}
-
-void execute_bkmeans_z(int *train_labels, double *train_features, int *test_labels, double *test_features)
-{
-//  int ndata, dim, kk, i, j, num_clusters = 0, correct_labeling_count = 0;
-//
-//  double *data;
-//  if(DEBUG) {
-//    ndata = 100000; dim = 2; kk = 350;
-//    data = malloc(ndata * dim * sizeof(double));
-//    for(i = 0; i < ndata * dim; i++) {
-//      data[i] = randMToN(0, 100);
-//    }
-//  }
-//  else {
-//    ndata = TRAIN_SIZE; dim = FEATURE_DIM; kk = 10;
-//    data = train_features;
-//  }
-//
-//  int *cluster_size = malloc(kk * sizeof(double));
-//  int *cluster_start = malloc(kk * sizeof(double));
-//  int *cluster_assign = malloc(ndata * sizeof(double));
-//
-//  // Initialize cluster assignments
-//  for(i = 0; i < ndata; i++) {
-//    cluster_assign[i] = -1;
-//  }
-//
-//  // Initialize cluster start and cluster size
-//  for(i = 0; i < kk; i++) {
-//    cluster_start[i] = 0;
-//    cluster_size[i] = 0;
-//  }
-//
-//  double *cluster_radius = malloc(kk * sizeof(double));
-//  double *cluster_center = malloc(kk * sizeof(double));
-//  for(i = 0; i < kk; i++) {
-//    cluster_center[i] = 0.0;
-//    cluster_radius[i] = 0.0;
-//  }
-//
-//  double *datum = malloc(dim * sizeof(double));
-//
-//  double *cluster_ssd = malloc(kk * sizeof(double));
-//
-//  printf("\nForming clusters via Bisecting K-means_z...\n\n");
-//  num_clusters = bkmeans_z(10, kk, dim, 0, ndata, data,
-//                           cluster_assign, datum,
-//                           cluster_center, cluster_radius,
-//                           cluster_start, cluster_size, cluster_ssd);
-//
-//  if(DEBUG) { writeResults(dim, ndata, data, cluster_assign); }
-//
-//  printf("Number of clusters = %d\n", num_clusters);
-//
-////  printf("\nPerforming searches...\n");
-////
-////  double *query = malloc(dim * sizeof(double));
-////  double *result_pt = malloc(dim * sizeof(double));
-////
-////  int h = 0, pts_searched;
-////  for(i = 0; i < TEST_SIZE; i++) {
-////    pts_searched = 0;
-////
-////    for(j = i * FEATURE_DIM; j < i * FEATURE_DIM + FEATURE_DIM; j++) {
-////      query[h] = test_features[j];
-////      h++;
-////    }
-////
-////    h = 0;
-////
-////    pts_searched = search_kdtree_hybrid(dim, ndata, train_features, kk,
-////                                        cluster_start, cluster_size, cluster_bdry,
-////                                        query, result_pt);
-////
-////    //if(i == 999 || i == 1999 || i == 2999 || i == 3999 || i == 4999) {
-////    printf("%d.\tpoints searched = %d\n", i+1, pts_searched);
-////    //}
-////
-////    free(query);
-////    free(result_pt);
-////    query = malloc(dim * sizeof(double));
-////    result_pt = malloc(dim * sizeof(double));
-////  }
-////
-////  printf("\n");
 }
 
 void read_MNIST_binary_dataset(char *file_path, int size, int *non_feature_data, double *feature_data)
@@ -541,4 +299,37 @@ void normalize_HIGGS_data(double *data, int feature_dimensions, int ndata)
   for(i = 0; i < ndata * feature_dimensions; i++) {
     data[i] = (data[i] - HIGGS_FEATURE_MIN_VALUE) / (HIGGS_FEATURE_MAX_VALUE - HIGGS_FEATURE_MIN_VALUE);
   }
+}
+
+void perform_queries(int clustering_algorithm, int data_set,
+                     double *train_feature_data, double *test_feature_data,
+                     int *train_non_feature_data, int *test_non_feature_data)
+{
+  char perform_queries = '\0';
+  printf("\nWould you like to perform queries against the ");
+
+  if(data_set == 1) { printf("MNIST "); }
+  if(data_set == 2) { printf("BIO "); }
+  if(data_set == 3) { printf("HIGGS "); }
+
+  printf("data set?\nEnter 'y' or 'n': ");
+  scanf("%s", &perform_queries);
+
+  while(perform_queries != 'y' && perform_queries != 'n') {
+    printf("\nPlease enter 'y' or 'n' if you do or do not want to perform queries: ");
+    scanf("%s", &perform_queries);
+  }
+
+  if(perform_queries == 'n') { return; }
+
+  search_clusters(clustering_algorithm, data_set,
+                  train_feature_data, test_feature_data,
+                  train_non_feature_data, test_non_feature_data);
+}
+
+void search_clusters(int clustering_algorithm, int data_set,
+                     double *train_feature_data, double *test_feature_data,
+                     int *train_non_feature_data, int *test_non_feature_data)
+{
+  printf("TODO: Search clusters\n");
 }
