@@ -7,29 +7,204 @@
 #include "../Header_Files/kdtree_median.h"
 #include "../Header_Files/bkmeans_z.h"
 
-double randMToN(double M, double N)
+void print_execution_error_message()
 {
-  return M + (rand() / ( RAND_MAX / (N-M) ) ) ;
+  printf("\nExecute using the following: ./main <clustering> <dataset>\n\n");
+
+  printf("The second argument specifies the algorithm used to cluster the data and is given "
+             "as an integer.\n\n");
+  printf("\t1: LSH\n\t2: Kdtree\n\t3: BKmeans\n");
+
+  printf("\nThe third argument specifies the dataset to cluster and is given as an integer.\n\n");
+  printf("\t1: MNIST\n\t2: BIO\n\t3: HIGGS\n\n");
 }
 
-void writeResults(int dim, int ndata, double* data, int* cluster_assign)
+void print_execution_time(clock_t begin, clock_t end, char message[50])
 {
-  int i;
-  FILE *file;
+  double total_sec = (double) (end-begin)/CLOCKS_PER_SEC,
+      remaining_secs = 0.0, remaining_mins = 0.0;
 
-  file = fopen("data.txt", "w");
-  fprintf(file, "%d\n", dim);
-  fprintf(file, "%d\n", ndata);
+  if(total_sec >= 60) {
+    double mins = floor(total_sec / 60);
 
-  for (i = 0; i < dim * ndata; i++) {
-    fprintf(file, "%lf\n", data[i]);
+    if(mins >= 60) {
+      double hours = floor(mins / 60);
+      remaining_mins = mins - (60 * hours);
+      printf("\n%s execution time: %.0f hour", message, hours);
+      if(hours > 1) { printf("s %.1f min(s)\n", remaining_mins); }
+      else { printf(" %.1f min(s)\n", remaining_mins); }
+    }
+    else {
+      remaining_secs = total_sec - (mins * 60);
+      printf("\n%s execution time: %d min", message, (int) mins);
+      if(mins > 1) { printf("s %.1f sec(s)\n", remaining_secs); }
+      else { printf(" %.1f sec(s)\n", remaining_secs); }
+    }
+  }
+  else {
+    printf("\n%s execution time: %.1f sec(s)\n", message,
+           (double) (end-begin)/CLOCKS_PER_SEC);
+  }
+}
+
+void fetch_datasets(int data_set, double **train_feature_data, double **test_feature_data,
+                    int **train_non_feature_data, int **test_non_feature_data)
+{
+  if(data_set == 1) { // MNIST data set
+    printf("\nReading in the MNIST training and testing data sets...\n");
+
+    *train_feature_data = malloc(MNIST_TRAIN_SIZE * MNIST_FEATURE_DIM * sizeof(double));
+    *train_non_feature_data = malloc(MNIST_TRAIN_SIZE * MNIST_NON_FEATURE_DIM * sizeof(int)); // train number labels
+
+    *test_feature_data = malloc(MNIST_TEST_SIZE * MNIST_FEATURE_DIM * sizeof(double));
+    *test_non_feature_data = malloc(MNIST_TEST_SIZE * MNIST_NON_FEATURE_DIM * sizeof(int)); // test number labels
+
+    read_MNIST_binary_dataset("MNIST_train.bin", MNIST_TRAIN_SIZE, *train_non_feature_data, *train_feature_data);
+    read_MNIST_binary_dataset("MNIST_test.bin", MNIST_TEST_SIZE, *test_non_feature_data, *test_feature_data);
   }
 
-  for (i = 0; i < ndata; i++) {
-    fprintf(file, "%d\n", cluster_assign[i]);
+  if(data_set == 2) { // BIO data set
+    printf("\nReading in the BIO training and testing data sets...\n");
+
+    *train_feature_data = malloc(BIO_TRAIN_SIZE * BIO_FEATURE_DIM * sizeof(double));
+    *train_non_feature_data = malloc(BIO_TRAIN_SIZE * BIO_NON_FEATURE_DIM * sizeof(int));
+
+    *test_feature_data = malloc(BIO_TEST_SIZE * BIO_FEATURE_DIM * sizeof(double));
+    *test_non_feature_data = malloc(BIO_TEST_SIZE * BIO_NON_FEATURE_DIM * sizeof(int));
+
+    read_BIO_binary_dataset("BIO_train.bin", BIO_TRAIN_SIZE, *train_non_feature_data, *train_feature_data);
+    read_BIO_binary_dataset("BIO_test.bin", BIO_TEST_SIZE, *test_non_feature_data, *test_feature_data);
   }
 
-  fclose(file);
+  if(data_set == 3) { // HIGGS data set
+    printf("\nReading in the HIGGS training and testing data sets...\n");
+
+    *train_feature_data = malloc(HIGGS_TRAIN_SIZE * HIGGS_FEATURE_DIM * sizeof(double));
+    *train_non_feature_data = malloc(HIGGS_TRAIN_SIZE * HIGGS_NON_FEATURE_DIM * sizeof(int));
+
+    *test_feature_data = malloc(HIGGS_TEST_SIZE * HIGGS_FEATURE_DIM * sizeof(double));
+    *test_non_feature_data = malloc(HIGGS_TEST_SIZE * HIGGS_NON_FEATURE_DIM * sizeof(int));
+
+    read_HIGGS_binary_dataset("HIGGS_train.bin", HIGGS_TRAIN_SIZE, *train_non_feature_data, *train_feature_data);
+    read_HIGGS_binary_dataset("HIGGS_test.bin", HIGGS_TEST_SIZE, *test_non_feature_data, *test_feature_data);
+  }
+}
+
+void cluster_and_search(int clustering_algorithm, int data_set,
+                        char normalize_data,
+                        double *train_feature_data, double *test_feature_data,
+                        int *train_non_feature_data, int *test_non_feature_data)
+{
+  int k = -1;
+
+  if(normalize_data == 'y' && data_set == 1) {
+    printf("\nNormalizing the MNIST data set...\n");
+    normalize_data_values(train_feature_data, MNIST_FEATURE_DIM, MNIST_TRAIN_SIZE,
+                          MNIST_FEATURE_MIN_VALUE, MNIST_FEATURE_MAX_VALUE);
+    normalize_data_values(test_feature_data, MNIST_FEATURE_DIM, MNIST_TEST_SIZE,
+                          MNIST_FEATURE_MIN_VALUE, MNIST_FEATURE_MAX_VALUE);
+  }
+
+  if(normalize_data == 'y' && data_set == 2) {
+    printf("\nNormalizing the BIO data set...\n");
+    normalize_data_values(train_feature_data, BIO_FEATURE_DIM, BIO_TRAIN_SIZE,
+                          BIO_FEATURE_MIN_VALUE, BIO_FEATURE_MAX_VALUE);
+    normalize_data_values(test_feature_data, BIO_FEATURE_DIM, BIO_TEST_SIZE,
+                          BIO_FEATURE_MIN_VALUE, BIO_FEATURE_MAX_VALUE);
+  }
+
+  if(normalize_data == 'y' && data_set == 3) {
+    printf("\nNormalizing the HIGGS data set...\n");
+    normalize_data_values(train_feature_data, HIGGS_FEATURE_DIM, HIGGS_TRAIN_SIZE,
+                          HIGGS_FEATURE_MIN_VALUE, HIGGS_FEATURE_MAX_VALUE);
+    normalize_data_values(test_feature_data, HIGGS_FEATURE_DIM, HIGGS_TEST_SIZE,
+                          HIGGS_FEATURE_MIN_VALUE, HIGGS_FEATURE_MAX_VALUE);
+  }
+
+  clock_t clustering_start = clock();
+
+  if(clustering_algorithm == 1) { // LSH clustering
+    if(data_set == 1) { // MNIST data set
+      execute_LSH(data_set, MNIST_FEATURE_DIM,
+                  MNIST_TRAIN_SIZE, train_feature_data,
+                  MNIST_TEST_SIZE, test_feature_data,
+                  train_non_feature_data, test_non_feature_data);
+    }
+
+    if(data_set == 2) { // BIO data set
+      execute_LSH(data_set, BIO_FEATURE_DIM,
+                  BIO_TRAIN_SIZE, train_feature_data,
+                  BIO_TEST_SIZE, test_feature_data,
+                  train_non_feature_data, test_non_feature_data);
+    }
+
+    if(data_set == 3) { // HIGGS data set
+      execute_LSH(data_set, HIGGS_FEATURE_DIM,
+                  HIGGS_TRAIN_SIZE, train_feature_data,
+                  HIGGS_TEST_SIZE, test_feature_data,
+                  train_non_feature_data, test_non_feature_data);
+    }
+  }
+
+  if(clustering_algorithm == 2) { // KDTree clustering
+    printf("\nEnter the desired number of clusters: ");
+    scanf("%d", &k);
+
+    if(data_set == 1) { // MNIST data set
+      execute_kdtree(data_set, MNIST_FEATURE_DIM, k,
+                     MNIST_TRAIN_SIZE, train_feature_data,
+                     MNIST_TEST_SIZE, test_feature_data,
+                     train_non_feature_data, test_non_feature_data);
+    }
+
+    if(data_set == 2) { // BIO data set
+      execute_kdtree(data_set, BIO_FEATURE_DIM, k,
+                     BIO_TRAIN_SIZE, train_feature_data,
+                     BIO_TEST_SIZE, test_feature_data,
+                     train_non_feature_data, test_non_feature_data);
+    }
+
+    if(data_set == 3) { // HIGGS data set
+      execute_kdtree(data_set, HIGGS_FEATURE_DIM, k,
+                     HIGGS_TRAIN_SIZE, train_feature_data,
+                     HIGGS_TEST_SIZE, test_feature_data,
+                     train_non_feature_data, test_non_feature_data);
+    }
+  }
+
+  if(clustering_algorithm == 3) { // BKmeans clustering
+    printf("\nEnter the desired number of clusters: ");
+    scanf("%d", &k);
+
+    if(data_set == 1) { // MNIST data set
+      execute_bkmeans_j(data_set, MNIST_FEATURE_DIM, k,
+                        MNIST_TRAIN_SIZE, train_feature_data,
+                        MNIST_TEST_SIZE, test_feature_data,
+                        train_non_feature_data, test_non_feature_data);
+    }
+
+    if(data_set == 2) { // BIO data set
+      execute_bkmeans_j(data_set, BIO_FEATURE_DIM, k,
+                        BIO_TRAIN_SIZE, train_feature_data,
+                        BIO_TEST_SIZE, test_feature_data,
+                        train_non_feature_data, test_non_feature_data);
+    }
+
+    if(data_set == 3) { // HIGGS data set
+      execute_bkmeans_j(data_set, HIGGS_FEATURE_DIM, k,
+                        HIGGS_TRAIN_SIZE, train_feature_data,
+                        HIGGS_TEST_SIZE, test_feature_data,
+                        train_non_feature_data, test_non_feature_data);
+    }
+  }
+
+  clock_t clustering_end = clock();
+
+  print_execution_time(clustering_start, clustering_end, "Clustering");
+
+  perform_search_queries(clustering_algorithm, data_set,
+                         test_feature_data, test_feature_data, train_non_feature_data,
+                         test_non_feature_data);
 }
 
 void execute_LSH(int data_set, int dim,
@@ -277,33 +452,18 @@ void read_HIGGS_binary_dataset(char *file_path, int size, int *non_feature_data,
   fclose(file);
 }
 
-void normalize_MNIST_data(double *data, int feature_dimensions, int ndata)
+void normalize_data_values(double *data, int feature_dimensions, int ndata,
+                           int feature_min_value, int feature_max_value)
 {
   int i;
   for(i = 0; i < ndata * feature_dimensions; i++) {
-    data[i] = (data[i] - MNIST_FEATURE_MIN_VALUE) / (MNIST_FEATURE_MAX_VALUE - MNIST_FEATURE_MIN_VALUE);
+    data[i] = (data[i] - feature_min_value) / (feature_max_value - feature_min_value);
   }
 }
 
-void normalize_BIO_data(double *data, int feature_dimensions, int ndata)
-{
-  int i;
-  for(i = 0; i < ndata * feature_dimensions; i++) {
-    data[i] = (data[i] - BIO_FEATURE_MIN_VALUE) / (BIO_FEATURE_MAX_VALUE - BIO_FEATURE_MIN_VALUE);
-  }
-}
-
-void normalize_HIGGS_data(double *data, int feature_dimensions, int ndata)
-{
-  int i;
-  for(i = 0; i < ndata * feature_dimensions; i++) {
-    data[i] = (data[i] - HIGGS_FEATURE_MIN_VALUE) / (HIGGS_FEATURE_MAX_VALUE - HIGGS_FEATURE_MIN_VALUE);
-  }
-}
-
-void perform_queries(int clustering_algorithm, int data_set,
-                     double *train_feature_data, double *test_feature_data,
-                     int *train_non_feature_data, int *test_non_feature_data)
+void perform_search_queries(int clustering_algorithm, int data_set,
+                            double *train_feature_data, double *test_feature_data,
+                            int *train_non_feature_data, int *test_non_feature_data)
 {
   char perform_queries = '\0';
   printf("\nWould you like to perform queries against the ");
@@ -322,14 +482,45 @@ void perform_queries(int clustering_algorithm, int data_set,
 
   if(perform_queries == 'n') { return; }
 
+  clock_t query_start = clock();
+
   search_clusters(clustering_algorithm, data_set,
                   train_feature_data, test_feature_data,
                   train_non_feature_data, test_non_feature_data);
+
+  clock_t query_end = clock();
+
+  print_execution_time(query_start, query_end, "Test data query");
 }
 
 void search_clusters(int clustering_algorithm, int data_set,
                      double *train_feature_data, double *test_feature_data,
                      int *train_non_feature_data, int *test_non_feature_data)
 {
-  printf("TODO: Search clusters\n");
+  printf("\nTODO: Search clusters\n");
+}
+
+double randMToN(double M, double N)
+{
+  return M + (rand() / ( RAND_MAX / (N-M) ) ) ;
+}
+
+void writeResults(int dim, int ndata, double *data, int *cluster_assign)
+{
+  int i;
+  FILE *file;
+
+  file = fopen("data.txt", "w");
+  fprintf(file, "%d\n", dim);
+  fprintf(file, "%d\n", ndata);
+
+  for (i = 0; i < dim * ndata; i++) {
+    fprintf(file, "%lf\n", data[i]);
+  }
+
+  for (i = 0; i < ndata; i++) {
+    fprintf(file, "%d\n", cluster_assign[i]);
+  }
+
+  fclose(file);
 }
