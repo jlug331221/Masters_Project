@@ -32,15 +32,13 @@ double dot_product(int dim, const double *vector_a, const double *vector_b);
 int* hash_q_pt(int dim, double *q_pt_vector, int m, double **r, const double *b, double w);
 
 /**
- * Search clusters for a matching hash of q_pt_hash. If there is a match, calculate the distance of the closest
- * neighbor and determine if the training label equals the test label.
- *
- * Increment correct_labeling_count if the labels match and return the number of points searched.
+ * Search clusters using test_feature_data. Calculate the distance of the closest neighbor and keep
+ * an average of all distances to neighbors.
  */
-int search_clusters_for_apprx_neighbors(int dim, double *train_features, int *train_labels,
-                                         int *test_labels, double *q_pt, int *q_pt_hash,
-                                         int test_query_index, Tree clusters, int m,
-                                         int *correct_labeling_count);
+void LSH_search_clusters_for_approx_neighbors(Tree clusters, int dim, int test_size,
+                                              int m, double w, double *b, double **r,
+                                              double *train_feature_data, double *test_feature_data,
+                                              int *train_non_feature_data, int *test_non_feature_data);
 
 /**
  * Calculate and return the distance from q_pt to neighbor_data_pt.

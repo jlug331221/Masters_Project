@@ -7,6 +7,23 @@
 #include "../Header_Files/kdtree_median.h"
 #include "../Header_Files/bkmeans_z.h"
 
+Tree clusters = NULL; // used in LSH
+double *b = NULL;     // used in LSH - initialized in execute_LSH()
+double **r = NULL;    // used in LSH - initialized in execute_LSH()
+int m = 0; // hash size, used in LSH - initialized in execute_LSH()
+double w = 0.0; // used in LSH - initialized in execute_LSH()
+
+int K = -1;
+
+int *cluster_assign = NULL; // used in Kdtree & Bkmeans
+int *cluster_size = NULL;   // used in Kdtree & Bkmeans
+int *cluster_start = NULL;  // used in Kdtree & Bkmeans
+
+double **cluster_bdry = NULL; // used in Kdtree - initialized in execute_kdtree()
+
+double *cluster_radius = NULL;    // used in Bkmeans - initialized in execute_bkmeans()
+double **cluster_centroid = NULL; // used in Kdtree & Bkmeans
+
 void print_execution_error_message()
 {
   printf("\nExecute using the following: ./main <clustering> <dataset>\n\n");
@@ -90,15 +107,12 @@ void fetch_datasets(int data_set, double **train_feature_data, double **test_fea
   }
 }
 
-void cluster_and_search(int clustering_algorithm, int data_set,
-                        char normalize_data,
+void cluster_and_search(int clustering_algorithm, int data_set, char normalize_data,
                         double *train_feature_data, double *test_feature_data,
                         int *train_non_feature_data, int *test_non_feature_data)
 {
-  int k = -1;
-
   if(normalize_data == 'y' && data_set == 1) {
-    printf("\nNormalizing the MNIST data set...\n");
+    printf("Normalizing the MNIST data set...\n");
     normalize_data_values(train_feature_data, MNIST_FEATURE_DIM, MNIST_TRAIN_SIZE,
                           MNIST_FEATURE_MIN_VALUE, MNIST_FEATURE_MAX_VALUE);
     normalize_data_values(test_feature_data, MNIST_FEATURE_DIM, MNIST_TEST_SIZE,
@@ -106,7 +120,7 @@ void cluster_and_search(int clustering_algorithm, int data_set,
   }
 
   if(normalize_data == 'y' && data_set == 2) {
-    printf("\nNormalizing the BIO data set...\n");
+    printf("Normalizing the BIO data set...\n");
     normalize_data_values(train_feature_data, BIO_FEATURE_DIM, BIO_TRAIN_SIZE,
                           BIO_FEATURE_MIN_VALUE, BIO_FEATURE_MAX_VALUE);
     normalize_data_values(test_feature_data, BIO_FEATURE_DIM, BIO_TEST_SIZE,
@@ -114,84 +128,68 @@ void cluster_and_search(int clustering_algorithm, int data_set,
   }
 
   if(normalize_data == 'y' && data_set == 3) {
-    printf("\nNormalizing the HIGGS data set...\n");
+    printf("Normalizing the HIGGS data set...\n");
     normalize_data_values(train_feature_data, HIGGS_FEATURE_DIM, HIGGS_TRAIN_SIZE,
                           HIGGS_FEATURE_MIN_VALUE, HIGGS_FEATURE_MAX_VALUE);
     normalize_data_values(test_feature_data, HIGGS_FEATURE_DIM, HIGGS_TEST_SIZE,
                           HIGGS_FEATURE_MIN_VALUE, HIGGS_FEATURE_MAX_VALUE);
   }
 
+  printf("\n==========================================================\n");
+
   clock_t clustering_start = clock();
 
   if(clustering_algorithm == 1) { // LSH clustering
     if(data_set == 1) { // MNIST data set
-      execute_LSH(data_set, MNIST_FEATURE_DIM,
-                  MNIST_TRAIN_SIZE, train_feature_data,
-                  MNIST_TEST_SIZE, test_feature_data,
-                  train_non_feature_data, test_non_feature_data);
+      clusters = execute_LSH(data_set, MNIST_FEATURE_DIM, MNIST_TRAIN_SIZE, train_feature_data);
     }
 
     if(data_set == 2) { // BIO data set
-      execute_LSH(data_set, BIO_FEATURE_DIM,
-                  BIO_TRAIN_SIZE, train_feature_data,
-                  BIO_TEST_SIZE, test_feature_data,
-                  train_non_feature_data, test_non_feature_data);
+      clusters = execute_LSH(data_set, BIO_FEATURE_DIM, BIO_TRAIN_SIZE, train_feature_data);
     }
 
     if(data_set == 3) { // HIGGS data set
-      execute_LSH(data_set, HIGGS_FEATURE_DIM,
-                  HIGGS_TRAIN_SIZE, train_feature_data,
-                  HIGGS_TEST_SIZE, test_feature_data,
-                  train_non_feature_data, test_non_feature_data);
+      clusters = execute_LSH(data_set, HIGGS_FEATURE_DIM, HIGGS_TRAIN_SIZE, train_feature_data);
     }
   }
 
   if(clustering_algorithm == 2) { // KDTree clustering
     printf("\nEnter the desired number of clusters: ");
-    scanf("%d", &k);
+    scanf("%d", &K);
 
     if(data_set == 1) { // MNIST data set
-      execute_kdtree(data_set, MNIST_FEATURE_DIM, k,
-                     MNIST_TRAIN_SIZE, train_feature_data,
-                     MNIST_TEST_SIZE, test_feature_data,
-                     train_non_feature_data, test_non_feature_data);
+      execute_kdtree(MNIST_FEATURE_DIM, K, MNIST_TRAIN_SIZE, train_feature_data);
     }
 
     if(data_set == 2) { // BIO data set
-      execute_kdtree(data_set, BIO_FEATURE_DIM, k,
-                     BIO_TRAIN_SIZE, train_feature_data,
-                     BIO_TEST_SIZE, test_feature_data,
-                     train_non_feature_data, test_non_feature_data);
+      execute_kdtree(BIO_FEATURE_DIM, K, BIO_TRAIN_SIZE, train_feature_data);
     }
 
     if(data_set == 3) { // HIGGS data set
-      execute_kdtree(data_set, HIGGS_FEATURE_DIM, k,
-                     HIGGS_TRAIN_SIZE, train_feature_data,
-                     HIGGS_TEST_SIZE, test_feature_data,
-                     train_non_feature_data, test_non_feature_data);
+      execute_kdtree(HIGGS_FEATURE_DIM, K, HIGGS_TRAIN_SIZE, train_feature_data);
     }
   }
 
   if(clustering_algorithm == 3) { // BKmeans clustering
     printf("\nEnter the desired number of clusters: ");
-    scanf("%d", &k);
+    scanf("%d", &K);
 
     if(data_set == 1) { // MNIST data set
-      execute_bkmeans_j(data_set, MNIST_FEATURE_DIM, k,
+      execute_bkmeans_j(data_set, MNIST_FEATURE_DIM, K,
                         MNIST_TRAIN_SIZE, train_feature_data,
                         MNIST_TEST_SIZE, test_feature_data,
                         train_non_feature_data, test_non_feature_data);
     }
 
     if(data_set == 2) { // BIO data set
-      execute_bkmeans_j(data_set, BIO_FEATURE_DIM, k,
+      execute_bkmeans_j(data_set, BIO_FEATURE_DIM, K,
                         BIO_TRAIN_SIZE, train_feature_data,
                         BIO_TEST_SIZE, test_feature_data,
                         train_non_feature_data, test_non_feature_data);
     }
 
     if(data_set == 3) { // HIGGS data set
-      execute_bkmeans_j(data_set, HIGGS_FEATURE_DIM, k,
+      execute_bkmeans_j(data_set, HIGGS_FEATURE_DIM, K,
                         HIGGS_TRAIN_SIZE, train_feature_data,
                         HIGGS_TEST_SIZE, test_feature_data,
                         train_non_feature_data, test_non_feature_data);
@@ -202,30 +200,27 @@ void cluster_and_search(int clustering_algorithm, int data_set,
 
   print_execution_time(clustering_start, clustering_end, "Clustering");
 
+  printf("\n==========================================================\n");
+
   perform_search_queries(clustering_algorithm, data_set,
-                         test_feature_data, test_feature_data, train_non_feature_data,
-                         test_non_feature_data);
+                         train_feature_data, test_feature_data,
+                         train_non_feature_data, test_non_feature_data);
 }
 
-void execute_LSH(int data_set, int dim,
-                 int train_size, double *train_data,
-                 int test_size, double *test_data,
-                 int *train_non_feature_data, int *test_non_feature_data)
+Tree execute_LSH(int data_set, int dim, int train_size, double *train_feature_data)
 {
-  // m is the hash size
-  int m, i, j, correct_labeling_count = 0, cluster_count = 0;
-  double w;
+  int i, j, correct_labeling_count = 0, cluster_count = 0;
 
-  if(data_set == 1) { m = 3; w = 6.0; } // MNIST data set
-  if(data_set == 2) { m = 30; w = 60.0; } // BIO data set
-  if(data_set == 3) { m = 40; w = 90.0; } // HIGGS data set
+  if(data_set == 1) { m = MNIST_m; w = MNIST_w; }   // MNIST data set
+  if(data_set == 2) { m = BIO_m; w = BIO_w; } // BIO data set
+  if(data_set == 3) { m = HIGGS_m; w = HIGGS_w; } // HIGGS data set
 
-  double *b = malloc(m * sizeof(double));
+  b = malloc(m * sizeof(double));
   for(i = 0; i < m; i++) {
     b[i] = 0.0;
   }
 
-  double **r = malloc(m * sizeof(double *));
+  r = malloc(m * sizeof(double *));
   for(i = 0; i < m; i++) {
     r[i] = malloc(dim * sizeof(double));
   }
@@ -237,7 +232,7 @@ void execute_LSH(int data_set, int dim,
   }
 
   printf("\nGenerating clusters via LSH...\n");
-  Tree clusters = LSH(dim, train_size, train_data, m, r, b, w);
+  Tree clusters = LSH(dim, train_size, train_feature_data, m, r, b, w);
 
   cluster_count = get_cluster_count(clusters);
   printf("\nLSH generated %d clusters.\n", cluster_count);
@@ -255,18 +250,17 @@ void execute_LSH(int data_set, int dim,
 
     write_LSH_clusters_info(clusters, dim, m, w, cluster_count);
   }
+
+  return clusters;
 }
 
-void execute_kdtree(int data_set, int dim, int k,
-                    int train_size, double *train_data,
-                    int test_size, double *test_data,
-                    int *train_non_feature_data, int *test_non_feature_data)
+void execute_kdtree(int dim, int k, int train_size, double *train_feature_data)
 {
-  int i, j, correct_labeling_count = 0;
+  int i, j;
 
-  int *cluster_assign = malloc(train_size * sizeof(cluster_assign));
-  int *cluster_size = malloc(k * sizeof(cluster_size));
-  int *cluster_start = malloc(k * sizeof(cluster_start));
+  cluster_assign = malloc(train_size * sizeof(cluster_assign));
+  cluster_size = malloc(k * sizeof(cluster_size));
+  cluster_start = malloc(k * sizeof(cluster_start));
 
   // Initialize cluster assignments
   for(i = 0; i < train_size; i++) {
@@ -279,10 +273,10 @@ void execute_kdtree(int data_set, int dim, int k,
     cluster_start[i] = 0;
   }
 
-  double **cluster_bdry = malloc(k * sizeof(double*));
-  double **cluster_centroid = malloc(k * sizeof(double*));
+  cluster_bdry = malloc(k * sizeof(double *));
+  cluster_centroid = malloc(k * sizeof(double *));
   for(i = 0; i < k; i++) {
-    cluster_bdry[i] = malloc((dim*2) * sizeof(double));
+    cluster_bdry[i] = malloc((dim * 2) * sizeof(double));
     cluster_centroid[i] = malloc(dim * sizeof(double));
   }
 
@@ -302,7 +296,7 @@ void execute_kdtree(int data_set, int dim, int k,
   }
 
   printf("\nGenerating KDTree with %d clusters...\n", k);
-  kdtree(dim, train_size, train_data, k,
+  kdtree(dim, train_size, train_feature_data, k,
          cluster_size, cluster_start, cluster_bdry,
          cluster_centroid, cluster_assign);
 
@@ -310,15 +304,15 @@ void execute_kdtree(int data_set, int dim, int k,
 }
 
 void execute_bkmeans_j(int data_set, int dim, int k,
-                       int train_size, double *train_data,
+                       int train_size, double *train_feature_data,
                        int test_size, double *test_data,
                        int *train_non_feature_data, int *test_non_feature_data)
 {
-  int i, j, num_clusters = 0, correct_labeling_count = 0, num_iterations = 0;
+  int i, j, num_iterations = 0;
 
-  int *cluster_size = malloc(k * sizeof(double));
-  int *cluster_start = malloc(k * sizeof(double));
-  int *cluster_assign = malloc(train_size * sizeof(double));
+  cluster_assign = malloc(train_size * sizeof(double));
+  cluster_size = malloc(k * sizeof(double));
+  cluster_start = malloc(k * sizeof(double));
 
   // Initialize cluster assignments
   for (i = 0; i < train_size; i++) {
@@ -327,11 +321,12 @@ void execute_bkmeans_j(int data_set, int dim, int k,
 
   // Initialize cluster start
   for (i = 0; i < k; i++) {
+    cluster_size[i] = 0;
     cluster_start[i] = 0;
   }
 
-  double *cluster_radius = malloc(k * sizeof(double));
-  double **cluster_centroid = malloc(k * sizeof(double *));
+  cluster_radius = malloc(k * sizeof(double));
+  cluster_centroid = malloc(k * sizeof(double *));
   for (i = 0; i < k; i++) {
     cluster_centroid[i] = malloc(dim * sizeof(double));
     cluster_radius[i] = 0.0;
@@ -359,9 +354,9 @@ void execute_bkmeans_j(int data_set, int dim, int k,
   }
   else {
     printf("\nForming %d clusters via Bisecting K-means_j...\n", k);
-    num_iterations = bisecting_kmeans(dim, train_size, train_data, k, cluster_size,
-                                         cluster_start, cluster_radius, cluster_centroid,
-                                         cluster_assign);
+    num_iterations = bisecting_kmeans(dim, train_size, train_feature_data, k, cluster_size,
+                                      cluster_start, cluster_radius, cluster_centroid,
+                                      cluster_assign);
   }
 
   printf("\nNumber of iterations for bisecting K-means clustering = %d\n", num_iterations);
@@ -482,6 +477,8 @@ void perform_search_queries(int clustering_algorithm, int data_set,
 
   if(perform_queries == 'n') { return; }
 
+  printf("\n**********************************************************\n\nPerforming queries using test data...\n");
+
   clock_t query_start = clock();
 
   search_clusters(clustering_algorithm, data_set,
@@ -491,13 +488,77 @@ void perform_search_queries(int clustering_algorithm, int data_set,
   clock_t query_end = clock();
 
   print_execution_time(query_start, query_end, "Test data query");
+
+  printf("\n**********************************************************\n");
 }
 
 void search_clusters(int clustering_algorithm, int data_set,
                      double *train_feature_data, double *test_feature_data,
                      int *train_non_feature_data, int *test_non_feature_data)
 {
-  printf("\nTODO: Search clusters\n");
+  if(clustering_algorithm == 1) {
+    if(data_set == 1) {
+      LSH_search_clusters_for_approx_neighbors(clusters, MNIST_FEATURE_DIM, MNIST_TEST_SIZE,
+                                               m, w, b, r,
+                                               train_feature_data, test_feature_data,
+                                               train_non_feature_data, test_non_feature_data);
+    }
+    if(data_set == 2) {
+      LSH_search_clusters_for_approx_neighbors(clusters, BIO_FEATURE_DIM, BIO_TEST_SIZE,
+                                               m, w, b, r,
+                                               train_feature_data, test_feature_data,
+                                               train_non_feature_data, test_non_feature_data);
+    }
+    if(data_set == 3) {
+      LSH_search_clusters_for_approx_neighbors(clusters, HIGGS_FEATURE_DIM, HIGGS_TEST_SIZE,
+                                               m, w, b, r,
+                                               train_feature_data, test_feature_data,
+                                               train_non_feature_data, test_non_feature_data);
+    }
+  }
+  if(clustering_algorithm == 2) {
+    if(data_set == 1) {
+      kdtree_search_clusters_for_approx_neighbors(MNIST_FEATURE_DIM, MNIST_TEST_SIZE, K,
+                                                  train_feature_data, test_feature_data,
+                                                  train_non_feature_data, test_non_feature_data,
+                                                  cluster_size, cluster_start, cluster_bdry);
+    }
+    if(data_set == 2) {
+      kdtree_search_clusters_for_approx_neighbors(BIO_FEATURE_DIM, BIO_TEST_SIZE, K,
+                                                  train_feature_data, test_feature_data,
+                                                  train_non_feature_data, test_non_feature_data,
+                                                  cluster_size, cluster_start, cluster_bdry);
+    }
+    if(data_set == 3) {
+      kdtree_search_clusters_for_approx_neighbors(HIGGS_FEATURE_DIM, HIGGS_TEST_SIZE, K,
+                                                  train_feature_data, test_feature_data,
+                                                  train_non_feature_data, test_non_feature_data,
+                                                  cluster_size, cluster_start, cluster_bdry);
+    }
+  }
+  if(clustering_algorithm == 3) {
+    if(data_set == 1) {
+      bkmeans_search_clsuters_for_approx_neighbors(MNIST_FEATURE_DIM, MNIST_TEST_SIZE, K,
+                                                   train_feature_data, test_feature_data,
+                                                   train_non_feature_data, test_non_feature_data,
+                                                   cluster_size, cluster_start,
+                                                   cluster_radius, cluster_centroid);
+    }
+    if(data_set == 2) {
+      bkmeans_search_clsuters_for_approx_neighbors(BIO_FEATURE_DIM, BIO_TEST_SIZE, K,
+                                                   train_feature_data, test_feature_data,
+                                                   train_non_feature_data, test_non_feature_data,
+                                                   cluster_size, cluster_start,
+                                                   cluster_radius, cluster_centroid);
+    }
+    if(data_set == 3) {
+      bkmeans_search_clsuters_for_approx_neighbors(HIGGS_FEATURE_DIM, HIGGS_TEST_SIZE, K,
+                                                   train_feature_data, test_feature_data,
+                                                   train_non_feature_data, test_non_feature_data,
+                                                   cluster_size, cluster_start,
+                                                   cluster_radius, cluster_centroid);
+    }
+  }
 }
 
 double randMToN(double M, double N)

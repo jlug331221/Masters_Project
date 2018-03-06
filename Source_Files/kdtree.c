@@ -10,18 +10,18 @@ int kdtree(int dim, int ndata, double *data, int k,
 
   treeDepth = (int) floor(log2(k));
 
-  kdtreeHelper(dim, ndata, data, treeDepth, currDepth, dLeft, dRight,
-               kLeft, kRight, cluster_size, cluster_start, cluster_bdry,
-               cluster_centroid, cluster_assign);
+  kdtree_helper(dim, ndata, data, treeDepth, currDepth, dLeft, dRight,
+                kLeft, kRight, cluster_size, cluster_start, cluster_bdry,
+                cluster_centroid, cluster_assign);
 
   return 0;
 }
 
-void kdtreeHelper(int dim, int ndata, double *data, int treeDepth,
-                  int currDepth, int dLeft, int dRight, int kLeft,
-                  int kRight, int *cluster_size, int *cluster_start,
-                  double **cluster_bdry, double **cluster_centroid,
-                  int *cluster_assign)
+void kdtree_helper(int dim, int ndata, double *data, int treeDepth,
+                   int currDepth, int dLeft, int dRight, int kLeft,
+                   int kRight, int *cluster_size, int *cluster_start,
+                   double **cluster_bdry, double **cluster_centroid,
+                   int *cluster_assign)
 {
   int midCluster, midData;
 
@@ -45,14 +45,14 @@ void kdtreeHelper(int dim, int ndata, double *data, int treeDepth,
   midData = cluster_start[kLeft] + cluster_size[kLeft]; //midData = cluster_start[kLeft];
 
   // Recursive call on left
-  kdtreeHelper(dim, ndata, data, treeDepth, currDepth + 1, dLeft, midData,
-               kLeft, midCluster, cluster_size, cluster_start, cluster_bdry,
-               cluster_centroid, cluster_assign);
+  kdtree_helper(dim, ndata, data, treeDepth, currDepth + 1, dLeft, midData,
+                kLeft, midCluster, cluster_size, cluster_start, cluster_bdry,
+                cluster_centroid, cluster_assign);
 
   // Recursive call on right
-  kdtreeHelper(dim, ndata, data, treeDepth, currDepth + 1, midData, dRight,
-               midCluster, kRight, cluster_size, cluster_start, cluster_bdry,
-               cluster_centroid, cluster_assign);
+  kdtree_helper(dim, ndata, data, treeDepth, currDepth + 1, midData, dRight,
+                midCluster, kRight, cluster_size, cluster_start, cluster_bdry,
+                cluster_centroid, cluster_assign);
 }
 
 int bipartition(int dim, int io, int im, double *data,
@@ -65,9 +65,9 @@ int bipartition(int dim, int io, int im, double *data,
 
   // Find means of each dimension and determine the dimension with max variance
   for(i = 0; i < dim; i++) {
-    mean = calcMean(i, dim, io * dim, im * dim, data);
+    mean = calc_mean(i, dim, io * dim, im * dim, data);
 
-    currVar = calcVariance(i, dim, io * dim, im * dim, data, mean);
+    currVar = calc_variance(i, dim, io * dim, im * dim, data, mean);
 
     if(currVar > maxVar) {
       maxVar = currVar;
@@ -110,14 +110,18 @@ int bipartition(int dim, int io, int im, double *data,
   int bdryMinMaxIndex = 0;
   // Find boundaries of each cluster
   for(i = 0; i < dim; i++) {
-    cluster_bdry[0][bdryMinMaxIndex] = findBoundaryMin(i, dim, data,
-                                                       cluster_start[0]*dim, (cluster_start[0]+cluster_size[0])*dim);
-    cluster_bdry[0][bdryMinMaxIndex+1] = findBoundaryMax(i, dim, data,
-                                                         cluster_start[0]*dim, (cluster_start[0]+cluster_size[0])*dim);
-    cluster_bdry[1][bdryMinMaxIndex] = findBoundaryMin(i, dim, data,
-                                                       cluster_start[1]*dim, (cluster_start[1]+cluster_size[1])*dim);
-    cluster_bdry[1][bdryMinMaxIndex+1] = findBoundaryMax(i, dim, data,
-                                                         cluster_start[1]*dim, (cluster_start[1]+cluster_size[1])*dim);
+    cluster_bdry[0][bdryMinMaxIndex] = find_boundary_min(i, dim, data,
+                                                         cluster_start[0] * dim,
+                                                         (cluster_start[0] + cluster_size[0]) * dim);
+    cluster_bdry[0][bdryMinMaxIndex + 1] = find_boundary_max(i, dim, data,
+                                                             cluster_start[0] * dim,
+                                                             (cluster_start[0] + cluster_size[0]) * dim);
+    cluster_bdry[1][bdryMinMaxIndex] = find_boundary_min(i, dim, data,
+                                                         cluster_start[1] * dim,
+                                                         (cluster_start[1] + cluster_size[1]) * dim);
+    cluster_bdry[1][bdryMinMaxIndex + 1] = find_boundary_max(i, dim, data,
+                                                             cluster_start[1]*dim,
+                                                             (cluster_start[1] + cluster_size[1]) * dim);
 
     bdryMinMaxIndex += 2;
   }
@@ -125,84 +129,100 @@ int bipartition(int dim, int io, int im, double *data,
   return 0;
 }
 
-void search_kdtree(int dim, int ndata, double *train_features, int *train_labels, int *test_labels,
-                   int k, int query_index, int *cluster_size, int *cluster_start, double **cluster_bdry,
-                   double *query, int *correct_labeling_count)
+void kdtree_search_clusters_for_approx_neighbors(int dim, int test_size, int k,
+                                                 double *train_feature_data, double *test_feature_data,
+                                                 int *train_non_feature_data, int *test_non_feature_data,
+                                                 int *cluster_size, int *cluster_start, double **cluster_bdry)
 {
-  int i, j, dimMinMaxIndex, closest_cluster = -1, correct_label = 0, apprx_closest_point = -1;
-  double distance, min = (double) INT_MAX;
+  int i, j, a, b, c = 0, dim_min_max_index, closest_cluster = -1;
+  double distance, min_cluster_distance = (double) INT_MAX, closest_neighbor_distance = 0.0,
+         total_closest_neighbor_distance = 0.0, *query = malloc(dim * sizeof(double)),
+         pts_searched_in_closest_cluster = 0.0, total_pts_searched = 0.0;
 
   double *cluster_distances = malloc(k * sizeof(double));
-  // Initialize cluster distances to -1.0
   for(i = 0; i < k; i++) {
     cluster_distances[i] = -1.0;
   }
 
-  // Begin searching for the cluster with the shortest distance
-  for(i = 0; i < k; i++) {
-    distance = 0.0;
-    dimMinMaxIndex = 0;
-    for(j = 0; j < dim; j++) {
-      if(query[j] < cluster_bdry[i][dimMinMaxIndex]) {
-        distance += (query[j] - cluster_bdry[i][dimMinMaxIndex]) *
-                    (query[j] - cluster_bdry[i][dimMinMaxIndex]);
-      }
-      if(query[j] > cluster_bdry[i][dimMinMaxIndex+1]) {
-        distance += (query[j] - cluster_bdry[i][dimMinMaxIndex+1]) *
-                    (query[j] - cluster_bdry[i][dimMinMaxIndex+1]);
-      }
-      dimMinMaxIndex += 2;
+  for(a = 0; a < test_size; a++) {
+    for(b = a * dim; b < a * dim + dim; b++) {
+      query[c] = test_feature_data[b];
+      c++;
     }
-    cluster_distances[i] = sqrt(distance);
+    c = 0;
 
-    if(cluster_distances[i] < min) {
-      min = cluster_distances[i]; closest_cluster = i;
+    // Begin searching for the nearest cluster (cluster with shortest distance to query)
+    for(i = 0; i < k; i++) {
+      distance = 0.0;
+      dim_min_max_index = 0;
+      for(j = 0; j < dim; j++) {
+        if(query[j] < cluster_bdry[i][dim_min_max_index]) {
+          distance += (query[j] - cluster_bdry[i][dim_min_max_index]) *
+                      (query[j] - cluster_bdry[i][dim_min_max_index]);
+        }
+        if(query[j] > cluster_bdry[i][dim_min_max_index + 1]) {
+          distance += (query[j] - cluster_bdry[i][dim_min_max_index + 1]) *
+                      (query[j] - cluster_bdry[i][dim_min_max_index + 1]);
+        }
+        dim_min_max_index += 2;
+      }
+      cluster_distances[i] = sqrt(distance);
+
+      if(cluster_distances[i] < min_cluster_distance) {
+        min_cluster_distance = cluster_distances[i]; closest_cluster = i;
+      }
     }
+
+    // Calculate distances for each point in closest_cluster
+    closest_neighbor_distance = kdtree_search_points_in_cluster(dim, query, train_feature_data, closest_cluster,
+                                                                cluster_start, cluster_size,
+                                                                &pts_searched_in_closest_cluster);
+
+    total_closest_neighbor_distance += closest_neighbor_distance;
+    total_pts_searched += pts_searched_in_closest_cluster;
+
+    pts_searched_in_closest_cluster = 0.0; closest_neighbor_distance = 0.0;
   }
 
-  // Calculate distances for each point in cluster with minimum distance
-  apprx_closest_point = kdtree_searchPointsInCluster(dim, query, train_features, closest_cluster,
-                                                     cluster_start, cluster_size);
+  free(cluster_distances); free(query);
 
-  if(train_labels[apprx_closest_point] == test_labels[query_index]) {
-    correct_label++; *correct_labeling_count += correct_label;
-  }
-
-  free(cluster_distances);
+  printf("\nQuery testing size = %d\n", test_size);
+  printf("\nAverage distance to the approximate neighbor = %.1lf\n",
+         total_closest_neighbor_distance / (double) test_size);
+  printf("\nAverage points searched per query = %.1lf\n", total_pts_searched / (double) test_size);
 }
 
-int kdtree_searchPointsInCluster(int dim, double *query, double *data, int closest_cluster,
-                                 int *cluster_start, int *cluster_size)
+double kdtree_search_points_in_cluster(int dim, double *query, double *train_feature_data, int closest_cluster,
+                                       int *cluster_start, int *cluster_size,
+                                       double *pts_searched_in_closest_cluster)
 {
-  int i, j, dataPointIndex,
-      apprx_closest_point = cluster_start[closest_cluster],
-      cluster_end = cluster_start[closest_cluster] +
-                    cluster_size[closest_cluster];
-  double distance, minPointDistance = (double) INT_MAX;
+  int i, j, dataPointIndex, cluster_end = cluster_start[closest_cluster] + cluster_size[closest_cluster];
+  double distance, min_point_distance = (double) INT_MAX;
 
   for(i = cluster_start[closest_cluster]; i < cluster_end; i++) {
     distance = 0.0;
     for(j = 0; j < dim; j++) {
       dataPointIndex = i * dim + j;
-      if(query[j] < data[dataPointIndex]) {
-        distance += (query[j] - data[dataPointIndex]) *
-                    (query[j] - data[dataPointIndex]);
+      if(query[j] < train_feature_data[dataPointIndex]) {
+        distance += (query[j] - train_feature_data[dataPointIndex]) *
+                    (query[j] - train_feature_data[dataPointIndex]);
       }
 
-      if(query[j] > data[dataPointIndex]) {
-        distance += (query[j] - data[dataPointIndex]) *
-                    (query[j] - data[dataPointIndex]);
+      if(query[j] > train_feature_data[dataPointIndex]) {
+        distance += (query[j] - train_feature_data[dataPointIndex]) *
+                    (query[j] - train_feature_data[dataPointIndex]);
       }
     }
 
     distance = sqrt(distance);
-    if(distance < minPointDistance) {
-      minPointDistance = distance;
-      apprx_closest_point = i;
+    if(distance < min_point_distance) {
+      min_point_distance = distance;
     }
+
+    *pts_searched_in_closest_cluster = *pts_searched_in_closest_cluster + 1;
   }
 
-  return apprx_closest_point;
+  return min_point_distance;
 }
 
 void kdtree_swap_points(int dim, double *data, int point1, int point2)
@@ -227,7 +247,7 @@ void kdtree_swap_labels(int *labels, int point1, int point2)
   labels[point1] = tmp;
 }
 
-double findBoundaryMin(int currDim, int totalDim, double *data, int start, int end)
+double find_boundary_min(int currDim, int totalDim, double *data, int start, int end)
 {
   int i;
   double min = (double) INT_MAX;
@@ -240,7 +260,7 @@ double findBoundaryMin(int currDim, int totalDim, double *data, int start, int e
   return min;
 }
 
-double findBoundaryMax(int currDim, int totalDim, double *data, int start, int end)
+double find_boundary_max(int currDim, int totalDim, double *data, int start, int end)
 {
   int i;
   double max = (double) INT_MIN;
@@ -253,7 +273,7 @@ double findBoundaryMax(int currDim, int totalDim, double *data, int start, int e
   return max;
 }
 
-double calcMean(int currDim, int totalDim, int start, int end, double *data)
+double calc_mean(int currDim, int totalDim, int start, int end, double *data)
 {
   int i, ndata = 0;
   double sum = 0.0;
@@ -265,8 +285,8 @@ double calcMean(int currDim, int totalDim, int start, int end, double *data)
   return sum / ndata;
 }
 
-double calcVariance(int currDim, int totalDim, int start, int end, double *data,
-                    double dimMean)
+double calc_variance(int currDim, int totalDim, int start, int end, double *data,
+                     double dimMean)
 {
   int i = 0, ndata = 0;
   double sumOfSquares = 0.0;

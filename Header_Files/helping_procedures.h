@@ -1,6 +1,8 @@
 #ifndef HELPING_PROCEDURES_H
 #define HELPING_PROCEDURES_H
 
+#include "LSH_cluster_ADT.h"
+
 void print_execution_error_message();
 
 void print_execution_time(clock_t begin, clock_t end, char message[50]);
@@ -21,23 +23,16 @@ void fetch_datasets(int data_set, double **train_feature_data, double **test_fea
  *
  * Then, perform search queries against the clustered data if desired by the user.
  */
-void cluster_and_search(int clustering_algorithm, int data_set,
-                        char normalize_data,
+void cluster_and_search(int clustering_algorithm, int data_set, char normalize_data,
                         double *train_feature_data, double *test_feature_data,
                         int *train_non_feature_data, int *test_non_feature_data);
 
-void execute_LSH(int data_set, int dim,
-                 int train_size, double *train_data,
-                 int test_size, double *test_data,
-                 int *train_non_feature_data, int *test_non_feature_data);
+Tree execute_LSH(int data_set, int dim, int train_size, double *train_feature_data);
 
-void execute_kdtree(int data_set, int dim, int k,
-                    int train_size, double *train_data,
-                    int test_size, double *test_data,
-                    int *train_non_feature_data, int *test_non_feature_data);
+void execute_kdtree(int dim, int k, int train_size, double *train_feature_data);
 
 void execute_bkmeans_j(int data_set, int dim, int k,
-                       int train_size, double *train_data,
+                       int train_size, double *train_feature_data,
                        int test_size, double *test_data,
                        int *train_non_feature_data, int *test_non_feature_data);
 

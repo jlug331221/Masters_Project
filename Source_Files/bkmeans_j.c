@@ -66,8 +66,8 @@ int two_kmeans(int dim, int ndata, double *data, int cluster_x, int cluster_y,
     for(i = 0; i < ndata; i++) {
       // Only check points that are in cluster_x -> cluster with max SSE
       if(cluster_assign[i] == cluster_x || cluster_assign[i] == cluster_y) {
-        two_assignPtToCluster(dim, cluster_x, cluster_y, i, data, cluster_centroid,
-                              cluster_assign, prev_cluster_assign);
+        two_assign_pt_to_cluster(dim, cluster_x, cluster_y, i, data, cluster_centroid,
+                                 cluster_assign, prev_cluster_assign);
       }
     }
 
@@ -85,16 +85,16 @@ int two_kmeans(int dim, int ndata, double *data, int cluster_x, int cluster_y,
       }
     }
 
-    if(! clusterAssignmentsChanged_bkm(ndata, cluster_assign, prev_cluster_assign)) {
+    if(! cluster_assignments_changed_bkm(ndata, cluster_assign, prev_cluster_assign)) {
       notFinishedClustering = false;
     }
     else {
       if(num_iterations < thresh_hold) {
-        setPrevClusterAssignments_bkm(ndata, cluster_assign, prev_cluster_assign);
+        set_prev_cluster_assignments_bkm(ndata, cluster_assign, prev_cluster_assign);
       }
 
-      two_updateClusterCentroids(dim, cluster_x, cluster_y, ndata, data, cluster_centroid,
-                                 cluster_size, cluster_assign);
+      two_update_cluster_centroids(dim, cluster_x, cluster_y, ndata, data, cluster_centroid,
+                                   cluster_size, cluster_assign);
     }
   }
 
@@ -120,7 +120,7 @@ int kmeans_bkm(int dim, int ndata, double *data, int k,
 
     // Assign data point to clusters and update centroids
     for (i = 0; i < ndata; i++) {
-      assignPtToCluster_bkm(dim, k, i, data, cluster_centroid, cluster_assign);
+      assign_pt_to_cluster_bkm(dim, k, i, data, cluster_centroid, cluster_assign);
     }
 
     // Reset cluster sizes because of new data point cluster assignments
@@ -138,21 +138,21 @@ int kmeans_bkm(int dim, int ndata, double *data, int k,
     }
 
     if(thresh_hold > 1) {
-      setPrevClusterAssignments_bkm(ndata, cluster_assign, prev_cluster_assign);
+      set_prev_cluster_assignments_bkm(ndata, cluster_assign, prev_cluster_assign);
     }
 
-    updateClusterCentroids_bkm(dim, k, ndata, data, cluster_centroid,
-                               cluster_size, cluster_assign);
+    update_cluster_centroids_bkm(dim, k, ndata, data, cluster_centroid,
+                                 cluster_size, cluster_assign);
   }
 
   printf("\nSorting the data...\n");
   quick_sort_data_bkm(dim, 0, ndata, data, cluster_assign);
 
-  setClusterStart_bkm(k, cluster_size, cluster_start);
+  set_cluster_start_bkm(k, cluster_size, cluster_start);
 
   for (i = 0; i < k; i++) {
-    setClusterRadius_bkm(dim, i, cluster_size, cluster_start, data,
-                         cluster_centroid, cluster_radius);
+    set_cluster_radius_bkm(dim, i, cluster_size, cluster_start, data,
+                           cluster_centroid, cluster_radius);
   }
 
   return num_iterations;
@@ -243,8 +243,8 @@ double calc_SSE(int dim, int ndata, double *data, int curr_cluster,
   return sum_squares_error;
 }
 
-void assignPtToCluster_bkm(int dim, int totalClusters, int data_pt, double *data,
-                           double **cluster_centroid, int *cluster_assign)
+void assign_pt_to_cluster_bkm(int dim, int totalClusters, int data_pt, double *data,
+                              double **cluster_centroid, int *cluster_assign)
 {
   int i, j, closestCluster = -1;
   double distance, minDistToCluster = (double) INT_MAX;
@@ -265,9 +265,9 @@ void assignPtToCluster_bkm(int dim, int totalClusters, int data_pt, double *data
   cluster_assign[data_pt] = closestCluster;
 }
 
-void two_assignPtToCluster(int dim, int cluster_x, int cluster_y, int data_pt, double *data,
-                           double **cluster_centroid, int *cluster_assign,
-                           int *prev_cluster_assign)
+void two_assign_pt_to_cluster(int dim, int cluster_x, int cluster_y, int data_pt, double *data,
+                             double **cluster_centroid, int *cluster_assign,
+                             int *prev_cluster_assign)
 {
   int j;
   double distance_to_cluster_x = 0.0, distance_to_cluster_y = 0.0;
@@ -294,46 +294,46 @@ void two_assignPtToCluster(int dim, int cluster_x, int cluster_y, int data_pt, d
   }
 }
 
-void two_updateClusterCentroids(int dim, int cluster_x, int cluster_y, int ndata, double *data,
-                                double **cluster_centroid, int *cluster_size,
-                                int *cluster_assign)
+void two_update_cluster_centroids(int dim, int cluster_x, int cluster_y, int ndata, double *data,
+                                  double **cluster_centroid, int *cluster_size,
+                                  int *cluster_assign)
 {
   int j;
 
   // Only calculate when cluster_x size is > 0
   if(cluster_size[cluster_x] > 0) {
     for(j = 0; j < dim; j++) {
-      cluster_centroid[cluster_x][j] = calcCentroid_bkm(dim, j, cluster_x, ndata, data,
-                                                        cluster_size, cluster_assign);
+      cluster_centroid[cluster_x][j] = calc_centroid_bkm(dim, j, cluster_x, ndata, data,
+                                                         cluster_size, cluster_assign);
     }
   }
 
   // Only calculate when cluster_y size is > 0
   if(cluster_size[cluster_y] > 0) {
     for(j = 0; j < dim; j++) {
-      cluster_centroid[cluster_y][j] = calcCentroid_bkm(dim, j, cluster_y, ndata, data,
-                                                        cluster_size, cluster_assign);
+      cluster_centroid[cluster_y][j] = calc_centroid_bkm(dim, j, cluster_y, ndata, data,
+                                                         cluster_size, cluster_assign);
     }
   }
 }
 
-void updateClusterCentroids_bkm(int dim, int totalClusters, int ndata, double *data,
-                                double **cluster_centroid, int *cluster_size,
-                                int *cluster_assign)
+void update_cluster_centroids_bkm(int dim, int totalClusters, int ndata, double *data,
+                                  double **cluster_centroid, int *cluster_size,
+                                  int *cluster_assign)
 {
   int i, j;
   for (i = 0; i < totalClusters; i++) {
     if (cluster_size[i] > 0) { // Only calculate when cluster size is > 0
       for (j = 0; j < dim; j++) {
-        cluster_centroid[i][j] = calcCentroid_bkm(dim, j, i, ndata, data,
+        cluster_centroid[i][j] = calc_centroid_bkm(dim, j, i, ndata, data,
                                                   cluster_size, cluster_assign);
       }
     }
   }
 }
 
-double calcCentroid_bkm(int dim, int currDim, int currCluster, int ndata,
-                        double *data, int *cluster_size, int *cluster_assign)
+double calc_centroid_bkm(int dim, int currDim, int currCluster, int ndata,
+                         double *data, int *cluster_size, int *cluster_assign)
 {
   int i;
   double sum = 0.0;
@@ -347,7 +347,7 @@ double calcCentroid_bkm(int dim, int currDim, int currCluster, int ndata,
   return sum / cluster_size[currCluster];
 }
 
-bool clusterAssignmentsChanged_bkm(int ndata, int *cluster_assign, int *prev_cluster_assign)
+bool cluster_assignments_changed_bkm(int ndata, int *cluster_assign, int *prev_cluster_assign)
 {
   int i;
 
@@ -360,7 +360,7 @@ bool clusterAssignmentsChanged_bkm(int ndata, int *cluster_assign, int *prev_clu
   return false;
 }
 
-void setPrevClusterAssignments_bkm(int ndata, int *cluster_assign, int *prev_cluster_assign)
+void set_prev_cluster_assignments_bkm(int ndata, int *cluster_assign, int *prev_cluster_assign)
 {
   int i;
 
@@ -434,7 +434,7 @@ void swap_labels_bkm(int *labels, int label1, int label2)
   labels[label1] = tmp;
 }
 
-void setClusterStart_bkm(int totalClusters, int *cluster_size, int *cluster_start)
+void set_cluster_start_bkm(int totalClusters, int *cluster_size, int *cluster_start)
 {
   int i, nextStartingPoint = cluster_size[0];
 
@@ -445,9 +445,9 @@ void setClusterStart_bkm(int totalClusters, int *cluster_size, int *cluster_star
   }
 }
 
-void setClusterRadius_bkm(int dim, int currCluster, int *cluster_size,
-                          int *cluster_start, double *data,
-                          double **cluster_centroid, double *cluster_radius)
+void set_cluster_radius_bkm(int dim, int currCluster, int *cluster_size,
+                           int *cluster_start, double *data,
+                           double **cluster_centroid, double *cluster_radius)
 {
   int i, j, end = cluster_size[currCluster] + cluster_start[currCluster];
   double distance, maxDistance = (double) INT_MIN;
@@ -468,57 +468,74 @@ void setClusterRadius_bkm(int dim, int currCluster, int *cluster_size,
   cluster_radius[currCluster] = maxDistance;
 }
 
-void search_clusters_bkm(int dim, int ndata, double *data, int *train_labels, int *test_labels,
-                         int k, int query_index, int *cluster_size, int *cluster_start,
-                         double *cluster_radius, double **cluster_centroid, double *query,
-                         int *correct_labeling_count)
+void bkmeans_search_clsuters_for_approx_neighbors(int dim, int test_size, int k,
+                                                  double *train_feature_data, double *test_feature_data,
+                                                  int *train_non_feature_data, int *test_non_feature_data,
+                                                  int *cluster_size, int *cluster_start,
+                                                  double *cluster_radius, double **cluster_centroid)
 {
-  int i, j, closestClusterIndex = -1, closest_approx_neighbor = 0, correct_label = 0;
-  double distance, minClusterDistance = (double) INT_MAX;
+  int i, j, a, b, c = 0, closest_cluster = -1;
+  double distance, min_cluster_distance = (double) INT_MAX, closest_neighbor_distance = 0.0,
+         total_closest_neighbor_distance = 0.0, *query = malloc(dim * sizeof(double)),
+         pts_searched_in_closest_cluster = 0.0, total_pts_searched = 0.0;;
 
   double *cluster_distances = malloc(k * sizeof(double));
-  // Initialize cluster distances to 0.0
   for(i = 0; i < k; i++) {
     cluster_distances[i] = 0.0;
   }
 
-  // Find closest cluster to the query point
-  for(i = 0; i < k; i++) {
-    distance = 0.0;
-    for(j = 0; j < dim; j++) {
-      distance += (cluster_centroid[i][j] - query[j]) *
-                  (cluster_centroid[i][j] - query[j]);
+  for(a = 0; a < test_size; a++) {
+    for(b = a * dim; b < a * dim + dim; b++) {
+      query[c] = test_feature_data[b];
+      c++;
     }
-    cluster_distances[i] = sqrt(distance);
+    c = 0;
 
-    if(cluster_distances[i] < minClusterDistance) {
-      minClusterDistance = cluster_distances[i];
-      closestClusterIndex = i;
+    // Find closest cluster to the query point
+    for(i = 0; i < k; i++) {
+      distance = 0.0;
+      for(j = 0; j < dim; j++) {
+        distance += (cluster_centroid[i][j] - query[j]) *
+                    (cluster_centroid[i][j] - query[j]);
+      }
+      cluster_distances[i] = sqrt(distance);
+
+      if(cluster_distances[i] < min_cluster_distance) {
+        min_cluster_distance = cluster_distances[i]; closest_cluster = i;
+      }
     }
+
+    // Search points in the closest cluster
+    closest_neighbor_distance = search_points_in_cluster_bkm(dim, query, train_feature_data,
+                                                             closest_cluster, cluster_start, cluster_size,
+                                                             &pts_searched_in_closest_cluster);
+
+    total_closest_neighbor_distance += closest_neighbor_distance;
+    total_pts_searched += pts_searched_in_closest_cluster;
+
+    pts_searched_in_closest_cluster = 0.0; closest_neighbor_distance = 0.0;
   }
 
-  // Search points in the closest cluster
-  closest_approx_neighbor = searchPointsInCluster_bkm(dim, query, data, closestClusterIndex,
-                                                      cluster_start, cluster_size);
+  free(cluster_distances); free(query);
 
-  if(train_labels[closest_approx_neighbor] == test_labels[query_index]) {
-    correct_label++; *correct_labeling_count += correct_label;
-  }
-
-  free(cluster_distances);
+  printf("\nQuery testing size = %d\n", test_size);
+  printf("\nAverage distance to the approximate neighbor = %.1lf\n",
+         total_closest_neighbor_distance / (double) test_size);
+  printf("\nAverage points searched per query = %.1lf\n", total_pts_searched / (double) test_size);
 }
 
-int searchPointsInCluster_bkm(int dim, double *query, double *data, int closestClusterIndex,
-                                 int *cluster_start, int *cluster_size)
+double search_points_in_cluster_bkm(int dim, double *query, double *train_feature_data,
+                                    int closest_cluster, int *cluster_start, int *cluster_size,
+                                    double *pts_searched_in_closest_cluster)
 {
-  int i, j, end = cluster_size[closestClusterIndex] + cluster_start[closestClusterIndex],
+  int i, j, end = cluster_size[closest_cluster] + cluster_start[closest_cluster],
       closest_approx_point_index = -1;
   double distance, minPointDistance = (double) INT_MAX;
 
-  for(i = cluster_start[closestClusterIndex]; i < end; i++) {
+  for(i = cluster_start[closest_cluster]; i < end; i++) {
     distance = 0.0;
     for(j = 0; j < dim; j++) {
-      distance += (query[j] - data[i * dim + j]) * (query[j] - data[i * dim + j]);
+      distance += (query[j] - train_feature_data[i * dim + j]) * (query[j] - train_feature_data[i * dim + j]);
     }
     distance = sqrt(distance);
 

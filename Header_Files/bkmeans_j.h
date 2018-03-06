@@ -45,47 +45,47 @@ double calc_SSE(int dim, int ndata, double *data, int curr_cluster,
 /**
  * Assign data_pt to the closest cluster_centroid.
  */
-void assignPtToCluster_bkm(int dim, int totalClusters, int data_pt, double *data,
-                           double **cluster_centroid, int *cluster_assign);
+void assign_pt_to_cluster_bkm(int dim, int totalClusters, int data_pt, double *data,
+                              double **cluster_centroid, int *cluster_assign);
 
 /**
  * Assign data_pt to closest cluster centroid (either cluster_x or cluster_y) if
  * cluster_assign[data_pt] != prev_cluster_assign[data_pt].
  */
-void two_assignPtToCluster(int dim, int cluster_x, int cluster_y, int data_pt, double *data,
-                           double **cluster_centroid, int *cluster_assign,
-                           int *prev_cluster_assign);
+void two_assign_pt_to_cluster(int dim, int cluster_x, int cluster_y, int data_pt, double *data,
+                              double **cluster_centroid, int *cluster_assign,
+                              int *prev_cluster_assign);
 
 /**
  * Updates cluster centroids by calculating the mean of cluster_x and cluster_y.
  */
-void two_updateClusterCentroids(int dim, int cluster_x, int cluster_y, int ndata, double *data,
-                                double **cluster_centroid, int *cluster_size,
-                                int *cluster_assign);
+void two_update_cluster_centroids(int dim, int cluster_x, int cluster_y, int ndata, double *data,
+                                  double **cluster_centroid, int *cluster_size,
+                                  int *cluster_assign);
 
 /**
  * Update cluster centroids using the calculated mean.
  */
-void updateClusterCentroids_bkm(int dim, int totalClusters, int ndata, double *data,
-                                double **cluster_centroid, int *cluster_size,
-                                int *cluster_assign);
+void update_cluster_centroids_bkm(int dim, int totalClusters, int ndata, double *data,
+                                  double **cluster_centroid, int *cluster_size,
+                                  int *cluster_assign);
 
 /**
  * Returns the mean (centroid) of currDim points in data.
  */
-double calcCentroid_bkm(int dim, int currDim, int currCluster, int ndata,
-                        double *data, int *cluster_size, int *cluster_assign);
+double calc_centroid_bkm(int dim, int currDim, int currCluster, int ndata,
+                         double *data, int *cluster_size, int *cluster_assign);
 
 /**
  * Returns true if the current cluster assignments are different from the
  * previous cluster assignments and false otherwise.
  */
-bool clusterAssignmentsChanged_bkm(int ndata, int *cluster_assign, int *prev_cluster_assign);
+bool cluster_assignments_changed_bkm(int ndata, int *cluster_assign, int *prev_cluster_assign);
 
 /**
  * Sets prev_cluster_assignments with assignments in cluster_assign.
  */
-void setPrevClusterAssignments_bkm(int ndata, int *cluster_assign, int *prev_cluster_assign);
+void set_prev_cluster_assignments_bkm(int ndata, int *cluster_assign, int *prev_cluster_assign);
 
 /**
  * Perform quicksort on cluster_assign, swapping data accordingly.
@@ -115,38 +115,30 @@ void swap_labels_bkm(int *labels, int label1, int label2);
 /**
  * Set the starting point for each cluster.
  */
-void setClusterStart_bkm(int totalClusters, int *cluster_size, int *cluster_start);
+void set_cluster_start_bkm(int totalClusters, int *cluster_size, int *cluster_start);
 
 /**
  * Sets the radius of cluster_centroid[currCluster]. Radius is defined as the point
  * that is furthers from the cluster_centroid[currCluster].
  */
-void setClusterRadius_bkm(int dim, int currCluster, int *cluster_size,
-                          int *cluster_start, double *data,
-                          double **cluster_centroid, double *cluster_radius);
+void set_cluster_radius_bkm(int dim, int currCluster, int *cluster_size,
+                           int *cluster_start, double *data,
+                           double **cluster_centroid, double *cluster_radius);
 
 /**
- * Perform a search for query in K clusters and return the number of points
- * searched.
+ * Searches k clusters for test_feature_data[test_size] query points.
  */
-void search_clusters_bkm(int dim, int ndata, double *data, int *train_labels, int *test_labels,
-                         int k, int query_index, int *cluster_size, int *cluster_start,
-                         double *cluster_radius, double **cluster_centroid, double *query,
-                         int *correct_labeling_count);
+void bkmeans_search_clsuters_for_approx_neighbors(int dim, int test_size, int k,
+                                                  double *train_feature_data, double *test_feature_data,
+                                                  int *train_non_feature_data, int *test_non_feature_data,
+                                                  int *cluster_size, int *cluster_start,
+                                                  double *cluster_radius, double **cluster_centroid);
 
 /**
- * Search data points within closestCluster. Returns closest neighbor point to query[dim].
+ * Search data points within closest_cluster and return the closest neighbor point distance to query.
  */
-int searchPointsInCluster_bkm(int dim, double *query, double *data, int closestClusterIndex,
-                              int *cluster_start, int *cluster_size);
-
-/**
- * Check other cluster distances for a distance shorter than minCurrPointDist.
- * If there is such a cluster with a shorter distance, return the index of that
- * cluster. Otherwise, return closestClusterIndex.
- */
-int checkOtherClusters_bkm(int totalClusters, double *cluster_distances,
-                           double *cluster_radius, int closestClusterIndex,
-                           double minCurrPointDist);
+double search_points_in_cluster_bkm(int dim, double *query, double *train_feature_data,
+                                    int closest_cluster, int *cluster_start, int *cluster_size,
+                                    double *pts_searched_in_closest_cluster);
 
 #endif //MASTERS_PROJECT_BISECTING_KMEANS_H

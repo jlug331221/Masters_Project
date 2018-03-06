@@ -78,31 +78,59 @@ int* hash_q_pt(int dim, double *q_pt_vector, int m, double **r, const double *b,
   return q_pt_hash;
 }
 
-int search_clusters_for_apprx_neighbors(int dim, double *train_features, int *train_labels,
-                                         int *test_labels, double *q_pt, int *q_pt_hash,
-                                         int test_query_index, Tree clusters, int m,
-                                         int *correct_labeling_count)
+void LSH_search_clusters_for_approx_neighbors(Tree clusters, int dim, int test_size,
+                                              int m, double w, double *b, double **r,
+                                              double *train_feature_data, double *test_feature_data,
+                                              int *train_non_feature_data, int *test_non_feature_data)
 {
-  int i, pts_searched = 0, correct_label = 0, closest_neighbor_pt = -1;
-  double closest_neighbor_dist = (double) INT_MAX, current_neighbor_pt_distance = 0.0;
+  int i, j, closest_neighbor_pt = -1,
+      *q_pt_hash = malloc(m * sizeof(int));
+  double closest_neighbor_dist = (double) INT_MAX, current_neighbor_pt_distance = 0.0,
+         total_closest_neighbor_dist = 0.0, *q_pt_vector = malloc(dim * sizeof(double)),
+         total_pts_searched = 0, query_pts_searched = 0;
 
-  Data_pt *neighbors = find_neighbors(clusters, m, q_pt_hash);
-
-  while(neighbors != NULL) {
-    current_neighbor_pt_distance = calc_dist_to_neighbor(dim, train_features, q_pt, neighbors->d_pt);
-
-    if(current_neighbor_pt_distance < closest_neighbor_dist) {
-      closest_neighbor_dist = current_neighbor_pt_distance;
-      closest_neighbor_pt = neighbors->d_pt;
+  for(i = 0; i < test_size; i++) {
+    for(j = 0; j < dim; j++) {
+      q_pt_vector[j] = test_feature_data[i * dim + j];
     }
 
-    neighbors = neighbors->next;
-    pts_searched++;
+    q_pt_hash = hash_q_pt(dim, q_pt_vector, m, r, b, w);
+
+    Data_pt *neighbors = find_neighbors(clusters, m, q_pt_hash);
+
+    while(neighbors != NULL) {
+      current_neighbor_pt_distance = calc_dist_to_neighbor(dim, train_feature_data, q_pt_vector, neighbors->d_pt);
+
+      if(current_neighbor_pt_distance < closest_neighbor_dist) {
+        closest_neighbor_dist = current_neighbor_pt_distance;
+        //closest_neighbor_pt = neighbors->d_pt;
+      }
+
+      neighbors = neighbors->next;
+      query_pts_searched++;
+    }
+
+    //printf("\n%d: Closest neighbor distance: %.1lf", i+1, closest_neighbor_dist);
+    //if(closest_neighbor_dist > 10.0) { printf("%d: %.1lf\n", i+1, closest_neighbor_dist); }
+
+    // Only add to the total closest neighbor distance if there is a neighbor found
+    if(closest_neighbor_dist != (double) INT_MAX) {
+      total_closest_neighbor_dist += closest_neighbor_dist;
+    }
+    total_pts_searched += query_pts_searched;
+
+    closest_neighbor_dist = (double) INT_MAX; current_neighbor_pt_distance = 0.0;
+    query_pts_searched = 0;
   }
 
-  if(train_labels[closest_neighbor_pt] == test_labels[test_query_index]) { *correct_labeling_count += 1; }
+  //printf("\nTotal closest neighbor distance: %.1lf\n", total_closest_neighbor_dist);
 
-  return pts_searched;
+  free(q_pt_vector); free(q_pt_hash);
+
+  printf("\nQuery testing size = %d\n", test_size);
+  printf("\nAverage distance to the approximate neighbor = %.1lf\n",
+         total_closest_neighbor_dist / (double) test_size);
+  printf("\nAverage points searched per query = %.1lf\n", total_pts_searched / (double) test_size);
 }
 
 double calc_dist_to_neighbor(int dim, double *data, double *q_pt, int neighbor_data_pt)
