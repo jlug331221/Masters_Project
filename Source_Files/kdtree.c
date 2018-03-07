@@ -1,5 +1,7 @@
 #include "../Header_Files/Headers.h"
+#include "../Header_Files/Defs.h"
 #include "../Header_Files/kdtree.h"
+#include "../Header_Files/helping_procedures.h"
 
 int kdtree(int dim, int ndata, double *data, int k,
            int *cluster_size, int *cluster_start, double **cluster_bdry,
@@ -135,8 +137,8 @@ void kdtree_search_clusters_for_approx_neighbors(int dim, int test_size, int k,
                                                  int *cluster_size, int *cluster_start, double **cluster_bdry)
 {
   int i, j, a, b, c = 0, dim_min_max_index, closest_cluster = -1;
-  double distance, min_cluster_distance = (double) INT_MAX, closest_neighbor_distance = 0.0,
-         total_closest_neighbor_distance = 0.0, *query = malloc(dim * sizeof(double)),
+  double distance, min_cluster_distance = (double) INT_MAX, closest_neighbor_dist = 0.0,
+         total_closest_neighbor_dist = 0.0, *query = malloc(dim * sizeof(double)),
          pts_searched_in_closest_cluster = 0.0, total_pts_searched = 0.0;
 
   double *cluster_distances = malloc(k * sizeof(double));
@@ -174,22 +176,19 @@ void kdtree_search_clusters_for_approx_neighbors(int dim, int test_size, int k,
     }
 
     // Calculate distances for each point in closest_cluster
-    closest_neighbor_distance = kdtree_search_points_in_cluster(dim, query, train_feature_data, closest_cluster,
+    closest_neighbor_dist = kdtree_search_points_in_cluster(dim, query, train_feature_data, closest_cluster,
                                                                 cluster_start, cluster_size,
                                                                 &pts_searched_in_closest_cluster);
 
-    total_closest_neighbor_distance += closest_neighbor_distance;
+    total_closest_neighbor_dist += closest_neighbor_dist;
     total_pts_searched += pts_searched_in_closest_cluster;
 
-    pts_searched_in_closest_cluster = 0.0; closest_neighbor_distance = 0.0;
+    pts_searched_in_closest_cluster = 0.0; closest_neighbor_dist = 0.0;
   }
 
   free(cluster_distances); free(query);
 
-  printf("\nQuery testing size = %d\n", test_size);
-  printf("\nAverage distance to the approximate neighbor = %.1lf\n",
-         total_closest_neighbor_distance / (double) test_size);
-  printf("\nAverage points searched per query = %.1lf\n", total_pts_searched / (double) test_size);
+  print_search_results(test_size, total_closest_neighbor_dist, total_pts_searched);
 }
 
 double kdtree_search_points_in_cluster(int dim, double *query, double *train_feature_data, int closest_cluster,

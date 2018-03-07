@@ -31,14 +31,14 @@
 #define BIO_TRAIN_SIZE                145751
 #define BIO_TEST_SIZE                 139658
 #define HIGGS_TRAIN_SIZE              10500000
-#define HIGGS_TEST_SIZE               10000
+#define HIGGS_TEST_SIZE               50000
 
 #define MNIST_m                       3
-#define BIO_m                         33
+#define BIO_m                         35
 #define HIGGS_m                       40
 
 #define MNIST_w                       6.0
-#define BIO_w                         50.0
+#define BIO_w                         55.0
 #define HIGGS_w                       90.0
 
 #define min(x,y)          ((x)>(y) ? (y) : (x))

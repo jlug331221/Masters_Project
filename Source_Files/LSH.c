@@ -1,6 +1,7 @@
 #include "../Header_Files/Headers.h"
 #include "../Header_Files/Defs.h"
 #include "../Header_Files/LSH.h"
+#include "../Header_Files/helping_procedures.h"
 
 Tree LSH(int dim, int ndata, const double *data,
              int m, double **r, double *b, double w)
@@ -127,10 +128,7 @@ void LSH_search_clusters_for_approx_neighbors(Tree clusters, int dim, int test_s
 
   free(q_pt_vector); free(q_pt_hash);
 
-  printf("\nQuery testing size = %d\n", test_size);
-  printf("\nAverage distance to the approximate neighbor = %.1lf\n",
-         total_closest_neighbor_dist / (double) test_size);
-  printf("\nAverage points searched per query = %.1lf\n", total_pts_searched / (double) test_size);
+  print_search_results(test_size, total_closest_neighbor_dist, total_pts_searched);
 }
 
 double calc_dist_to_neighbor(int dim, double *data, double *q_pt, int neighbor_data_pt)

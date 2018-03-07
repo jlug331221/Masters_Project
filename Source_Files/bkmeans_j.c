@@ -1,6 +1,7 @@
-#include "../Header_Files/Defs.h"
 #include "../Header_Files/Headers.h"
+#include "../Header_Files/Defs.h"
 #include "../Header_Files/bkmeans_j.h"
+#include "../Header_Files/helping_procedures.h"
 
 int bisecting_kmeans(int dim, int ndata, double *data, int k,
                      int *cluster_size, int *cluster_start,
@@ -475,8 +476,8 @@ void bkmeans_search_clsuters_for_approx_neighbors(int dim, int test_size, int k,
                                                   double *cluster_radius, double **cluster_centroid)
 {
   int i, j, a, b, c = 0, closest_cluster = -1;
-  double distance, min_cluster_distance = (double) INT_MAX, closest_neighbor_distance = 0.0,
-         total_closest_neighbor_distance = 0.0, *query = malloc(dim * sizeof(double)),
+  double distance, min_cluster_distance = (double) INT_MAX, closest_neighbor_dist = 0.0,
+         total_closest_neighbor_dist = 0.0, *query = malloc(dim * sizeof(double)),
          pts_searched_in_closest_cluster = 0.0, total_pts_searched = 0.0;;
 
   double *cluster_distances = malloc(k * sizeof(double));
@@ -495,8 +496,8 @@ void bkmeans_search_clsuters_for_approx_neighbors(int dim, int test_size, int k,
     for(i = 0; i < k; i++) {
       distance = 0.0;
       for(j = 0; j < dim; j++) {
-        distance += (cluster_centroid[i][j] - query[j]) *
-                    (cluster_centroid[i][j] - query[j]);
+        distance += (query[j] - cluster_centroid[i][j]) *
+                    (query[j] - cluster_centroid[i][j]);
       }
       cluster_distances[i] = sqrt(distance);
 
@@ -506,31 +507,27 @@ void bkmeans_search_clsuters_for_approx_neighbors(int dim, int test_size, int k,
     }
 
     // Search points in the closest cluster
-    closest_neighbor_distance = search_points_in_cluster_bkm(dim, query, train_feature_data,
+    closest_neighbor_dist = search_points_in_cluster_bkm(dim, query, train_feature_data,
                                                              closest_cluster, cluster_start, cluster_size,
                                                              &pts_searched_in_closest_cluster);
 
-    total_closest_neighbor_distance += closest_neighbor_distance;
+    total_closest_neighbor_dist += closest_neighbor_dist;
     total_pts_searched += pts_searched_in_closest_cluster;
 
-    pts_searched_in_closest_cluster = 0.0; closest_neighbor_distance = 0.0;
+    pts_searched_in_closest_cluster = 0.0; closest_neighbor_dist = 0.0;
   }
 
   free(cluster_distances); free(query);
 
-  printf("\nQuery testing size = %d\n", test_size);
-  printf("\nAverage distance to the approximate neighbor = %.1lf\n",
-         total_closest_neighbor_distance / (double) test_size);
-  printf("\nAverage points searched per query = %.1lf\n", total_pts_searched / (double) test_size);
+  print_search_results(test_size, total_closest_neighbor_dist, total_pts_searched);
 }
 
 double search_points_in_cluster_bkm(int dim, double *query, double *train_feature_data,
                                     int closest_cluster, int *cluster_start, int *cluster_size,
                                     double *pts_searched_in_closest_cluster)
 {
-  int i, j, end = cluster_size[closest_cluster] + cluster_start[closest_cluster],
-      closest_approx_point_index = -1;
-  double distance, minPointDistance = (double) INT_MAX;
+  int i, j, end = cluster_size[closest_cluster] + cluster_start[closest_cluster];
+  double distance, min_point_distance = (double) INT_MAX;
 
   for(i = cluster_start[closest_cluster]; i < end; i++) {
     distance = 0.0;
@@ -539,11 +536,12 @@ double search_points_in_cluster_bkm(int dim, double *query, double *train_featur
     }
     distance = sqrt(distance);
 
-    if(distance < minPointDistance) {
-      minPointDistance = distance;
-      closest_approx_point_index = i;
+    if(distance < min_point_distance) {
+      min_point_distance = distance;
     }
+
+    *pts_searched_in_closest_cluster = *pts_searched_in_closest_cluster + 1;
   }
 
-  return closest_approx_point_index;
+  return min_point_distance;
 }

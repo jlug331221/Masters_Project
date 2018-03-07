@@ -83,6 +83,11 @@ void search_clusters(int clustering_algorithm, int data_set,
                      int *train_non_feature_data, int *test_non_feature_data);
 
 /**
+ * Print the query search results.
+ */
+void print_search_results(int test_size, double total_closest_neighbor_distance, double total_pts_searched);
+
+/**
  * Generate a random (double) number between M and N inclusive.
  *
  * M <= rand <= N

@@ -561,6 +561,14 @@ void search_clusters(int clustering_algorithm, int data_set,
   }
 }
 
+void print_search_results(int test_size, double total_closest_neighbor_distance, double total_pts_searched)
+{
+  printf("\nQuery testing size = %d\n", test_size);
+  printf("\nAverage distance to the approximate neighbor = %.1e\n",
+         total_closest_neighbor_distance / (double) test_size);
+  printf("\nAverage points searched per query = %.1lf\n", total_pts_searched / (double) test_size);
+}
+
 double randMToN(double M, double N)
 {
   return M + (rand() / ( RAND_MAX / (N-M) ) ) ;
