@@ -46,7 +46,8 @@ void LSH_search_clusters_for_approx_neighbors(Tree clusters, int dim, int test_s
 double calc_dist_to_neighbor(int dim, double *data, double *q_pt, int neighbor_data_pt);
 
 /**
- * Return random Gaussian distribution value. Taken from a method described by Abramowitz and Stegun.
+ * Return random normal (Gaussian) distribution value taken from the Box-Muller transformation. This
+ * generator is pseudo-random.
  */
 double gauss_rand();
 
