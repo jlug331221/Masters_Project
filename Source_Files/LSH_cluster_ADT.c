@@ -200,42 +200,74 @@ int get_cluster_count(Tree T)
 void write_LSH_clusters_info(Tree T, int dim, int hash_size, double w, int cluster_count)
 {
   int i;
-  FILE *file;
+  FILE *file1, *file2;
 
-  file = fopen("../LSH_Cluster_Data_Info/clusters.dat", "w");
-  fprintf(file, "cluster count = %d\n", cluster_count);
-  fprintf(file, "hash size = %d\n", hash_size);
-  fprintf(file, "w = %.01lf\n\n", w);
+  file1 = fopen("../cmake-build-debug/LSH_clusters.dat", "w");
+  fprintf(file1, "cluster count = %d\n", cluster_count);
+  fprintf(file1, "hash size = %d\n", hash_size);
+  fprintf(file1, "w = %.01lf\n\n", w);
 
-  write_cluster_node_info(file, T, hash_size);
+  file2 = fopen("../cmake-build-debug/LSH_cluster_assign.dat", "w");
 
-  fclose(file);
+  write_cluster_node_info(file1, file2, T, hash_size);
+
+  fclose(file1);
+  fclose(file2);
 }
 
-void write_cluster_node_info(FILE *file, Tree T, int hash_size)
+void write_cluster_node_info(FILE *file1, FILE *file2, Tree T, int hash_size)
 {
   if(T == NULL) { return; }
 
-  write_cluster_node_info(file, T->left, hash_size);
+  write_cluster_node_info(file1, file2, T->left, hash_size);
 
   // Print cluster node info (hash value of cluster node and data points at cluster node
   int i;
-  fprintf(file, "Cluster node hash: ");
+  fprintf(file1, "Cluster node hash: ");
   for(i = 0; i < hash_size; i++) {
-    fprintf(file, "%4d", T->cluster_hash[i]);
+    fprintf(file1, "%4d", T->cluster_hash[i]);
   }
-  fprintf(file, "\n");
+  fprintf(file1, "\n");
 
-  fprintf(file, "Data points: ");
+  fprintf(file1, "Data points: ");
   Data_pt *tmp = T->data_pts;
   while(tmp != NULL) {
-    fprintf(file, "%6d", tmp->d_pt);
+    fprintf(file1, "%6d", tmp->d_pt);
+
+    fprintf(file2, "%d ", tmp->d_pt);
 
     tmp = tmp->next;
   }
-  fprintf(file, "\n*******************************************************************\n\n");
+  fprintf(file1, "\n*******************************************************************\n\n");
+  fprintf(file2, "-1\n");
 
-  write_cluster_node_info(file, T->right, hash_size);
+  write_cluster_node_info(file1, file2, T->right, hash_size);
+}
+
+void debug_LSH_generate_cluster_assign(int *debug_cluster_assign, int debug_cluster_count)
+{
+  FILE *file = fopen("../cmake-build-debug/LSH_cluster_assign.dat", "r");
+
+  if(file == NULL) {
+    perror("Error");
+    exit(1);
+  }
+
+  int cluster = 0;
+  char *data_pt = malloc(7 * sizeof(char));
+
+  while(cluster < debug_cluster_count) {
+    fscanf(file, "%s", data_pt);
+    while((int) strtod(data_pt, NULL) != -1) {
+      debug_cluster_assign[(int) strtod(data_pt, NULL)] = cluster;
+
+      fscanf(file, "%s", data_pt);
+    }
+
+    cluster++;
+  }
+
+  fclose(file);
 }
 
 void verify_data_pts_clustered(Tree T, int *data_pts, int ndata) {

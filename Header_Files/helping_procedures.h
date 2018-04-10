@@ -98,6 +98,16 @@ double randMToN(double M, double N);
  * Write the results of cluster assign for each point in data[dim * ndata] to disk.
  * This is used exclusively for debugging purposes.
  */
-void writeResults(int dim, int ndata, double *data, int *cluster_assign);
+void write_results(int dim, int ndata, double *data, int *cluster_assign);
+
+/**
+ * Debugging procedure for LSH. Writes the LSH cluster info to '/cmake-build-debug/LSH_clusters.dat'.
+ */
+Tree execute_debug_LSH();
+
+/**
+ * Read in the debug 2D dummy data from 'debug_data.txt'.
+ */
+double* read_debug_data();
 
 #endif //HELPING_PROCEDURES_H

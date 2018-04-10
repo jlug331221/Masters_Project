@@ -9,7 +9,7 @@ int bisecting_kmeans(int dim, int ndata, double *data, int k,
                      int *cluster_assign)
 {
   int i, num_iterations = 0, curr_cluster_count = 1,
-      cluster_x = 0, cluster_y = 1, cluster_with_max_SSE = -1;
+      cluster_x = 0, cluster_y = 1, cluster_with_min_SSE = -1;
 
   double *cluster_sse = malloc(k * sizeof(double));
   // Initialize cluster_sse
@@ -33,10 +33,10 @@ int bisecting_kmeans(int dim, int ndata, double *data, int k,
     num_iterations += two_kmeans(dim, ndata, data, cluster_x, cluster_y,
                                  cluster_size, cluster_centroid, cluster_assign);
 
-    cluster_with_max_SSE = get_max_SSE(dim, ndata, data, k, cluster_centroid,
+    cluster_with_min_SSE = get_max_SSE(dim, ndata, data, k, cluster_centroid,
                                        cluster_sse, cluster_assign);
 
-    cluster_x = cluster_with_max_SSE;
+    cluster_x = cluster_with_min_SSE;
     cluster_y = cluster_y + 1;
 
     curr_cluster_count++;

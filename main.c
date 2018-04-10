@@ -15,31 +15,35 @@ int main(int argc, char **argv)
   int data_set = (int) strtol(argv[2], NULL, 0);
   char normalize_data = '\0';
 
-  printf("Would you like to normalize the ");
-
-  if(data_set == 1) { printf("MNIST "); }
-  if(data_set == 2) { printf("BIO "); }
-  if(data_set == 3) { printf("HIGGS "); }
-
-  printf("data set?\nEnter 'y' or 'n': ");
-  scanf("%s", &normalize_data);
-
-  while(normalize_data != 'y' && normalize_data != 'n') {
-    printf("\nPlease enter 'y' or 'n' if you do or do not want to normalize the ");
+  if(! DEBUG) {
+    printf("Would you like to normalize the ");
 
     if(data_set == 1) { printf("MNIST "); }
     if(data_set == 2) { printf("BIO "); }
     if(data_set == 3) { printf("HIGGS "); }
 
-    printf("data set: ");
+    printf("data set?\nEnter 'y' or 'n': ");
     scanf("%s", &normalize_data);
+
+    while(normalize_data != 'y' && normalize_data != 'n') {
+      printf("\nPlease enter 'y' or 'n' if you do or do not want to normalize the ");
+
+      if(data_set == 1) { printf("MNIST "); }
+      if(data_set == 2) { printf("BIO "); }
+      if(data_set == 3) { printf("HIGGS "); }
+
+      printf("data set: ");
+      scanf("%s", &normalize_data);
+    }
   }
 
   double *train_feature_data = NULL, *test_feature_data = NULL;
   int *train_non_feature_data = NULL, *test_non_feature_data = NULL;
 
-  fetch_datasets(data_set, &train_feature_data, &test_feature_data,
+  if(! DEBUG) {
+    fetch_datasets(data_set, &train_feature_data, &test_feature_data,
                    &train_non_feature_data, &test_non_feature_data);
+  }
 
   int clustering_algorithm = (int) strtol(argv[1], NULL, 0);
   cluster_and_search(clustering_algorithm, data_set,

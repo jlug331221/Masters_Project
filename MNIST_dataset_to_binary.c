@@ -24,7 +24,7 @@ double* read_dataset(char *file_path, int size)
   k = 0;
   for (i = 0; i < size; i++) {
     // Read the label
-    fscanf(file, "%s", current_label);
+    fscanf(file, "%lf", current_label);
     data[k] = strtod(current_label, NULL);
     k++;
 

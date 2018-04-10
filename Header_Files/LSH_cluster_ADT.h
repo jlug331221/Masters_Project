@@ -10,7 +10,7 @@ struct Cluster;
 typedef struct Cluster *Tree;
 
 /**
- * Return the height of cluster tree C.
+ * Return the height of T.
  */
 int get_height(Tree T);
 
@@ -105,17 +105,21 @@ Data_pt* find_neighbors(Tree T, int hash_size, int *q_pt_hash);
 int get_cluster_count(Tree T);
 
 /**
- * Write the LSH clusters info (including dimensions, hash size, w and total number of clusters) to
- * 'LSH_Cluster_Data_Info/clusters.dat'.
+ * Writes the LSH clusters info (including dimensions, hash size, w and total number of clusters) to
+ * '/cmake-build-debug/LSH_clusters.dat'. Also writes out each point in a cluster to
+ * 'cmake-build-debug/LSH_cluster_assign.dat', with all points per cluster on one line.
  */
 void write_LSH_clusters_info(Tree T, int dim, int hash_size, double w, int cluster_count);
 
 /**
- * Write cluster node info (cluster hash value and data points) to 'LSH_Cluster_Data_Info/clusters.dat'.
- *
  * Printing of cluster info is done via Inorder tree traversal (Left, Root, Right).
  */
-void write_cluster_node_info(FILE *f, Tree T, int hash_size);
+void write_cluster_node_info(FILE *file1, FILE *file2, Tree T, int hash_size);
+
+/**
+ * Assign clusters to debug_cluster_assign. This is needed so that a 2-D plot can be generated for debugging.
+ */
+void debug_LSH_generate_cluster_assign(int *debug_cluster_assign, int debug_cluster_count);
 
 /**
  * Verify that all data points have been clustered.

@@ -7,6 +7,9 @@
 #include "../Header_Files/kdtree_median.h"
 #include "../Header_Files/bkmeans_z.h"
 
+int debug_size = 50000, debug_dim = 2;
+double *debug_data = NULL;
+
 Tree clusters = NULL; // used in LSH
 double *b = NULL;     // used in LSH - initialized in execute_LSH()
 double **r = NULL;    // used in LSH - initialized in execute_LSH()
@@ -154,7 +157,9 @@ void cluster_and_search(int clustering_algorithm, int data_set, char normalize_d
   }
 
   if(clustering_algorithm == 2) { // KDTree clustering
-    printf("\nEnter the desired number of clusters: ");
+    if(DEBUG) { printf("\nDEBUG -> Enter the desired number of clusters: "); }
+    else { printf("\nEnter the desired number of clusters: "); }
+
     scanf("%d", &K);
 
     if(data_set == 1) { // MNIST data set
@@ -171,7 +176,8 @@ void cluster_and_search(int clustering_algorithm, int data_set, char normalize_d
   }
 
   if(clustering_algorithm == 3) { // BKmeans clustering
-    printf("\nEnter the desired number of clusters: ");
+    if(DEBUG) { printf("\nDEBUG -> Enter the desired number of clusters: "); }
+    else { printf("\nEnter the desired number of clusters: "); }
     scanf("%d", &K);
 
     if(data_set == 1) { // MNIST data set
@@ -202,9 +208,11 @@ void cluster_and_search(int clustering_algorithm, int data_set, char normalize_d
 
   printf("\n==========================================================\n");
 
-  perform_search_queries(clustering_algorithm, data_set,
-                         train_feature_data, test_feature_data,
-                         train_non_feature_data, test_non_feature_data);
+  if(! DEBUG) {
+    perform_search_queries(clustering_algorithm, data_set,
+                           train_feature_data, test_feature_data,
+                           train_non_feature_data, test_non_feature_data);
+  }
 }
 
 Tree execute_LSH(int data_set, int dim, int train_size, double *train_feature_data)
@@ -231,27 +239,18 @@ Tree execute_LSH(int data_set, int dim, int train_size, double *train_feature_da
     }
   }
 
-  printf("\nGenerating clusters via LSH...\n");
-  Tree clusters = LSH(dim, train_size, train_feature_data, m, r, b, w);
-
-  cluster_count = get_cluster_count(clusters);
-  printf("\nLSH generated %d clusters.\n", cluster_count);
-
   if(DEBUG) {
-    int *data_pts = malloc(train_size * sizeof(int));
-    for (i = 0; i < train_size; i++) { data_pts[i] = -1; }
-    verify_data_pts_clustered(clusters, data_pts, train_size);
-
-    for (i = 0; i < train_size; i++) {
-      if (data_pts[i] == -1) {
-        printf("\n** Point %d not clustered **\n", i);
-      }
-    }
-
-    write_LSH_clusters_info(clusters, dim, m, w, cluster_count);
+    return execute_debug_LSH();
   }
+  else {
+    printf("\nGenerating clusters via LSH...\n");
+    Tree clusters = LSH(dim, train_size, train_feature_data, m, r, b, w);
 
-  return clusters;
+    cluster_count = get_cluster_count(clusters);
+    printf("\nLSH generated %d clusters.\n", cluster_count);
+
+    return clusters;
+  }
 }
 
 void execute_kdtree(int dim, int k, int train_size, double *train_feature_data)
@@ -295,10 +294,22 @@ void execute_kdtree(int dim, int k, int train_size, double *train_feature_data)
     }
   }
 
-  printf("\nGenerating KDTree with %d clusters...\n", k);
-  kdtree(dim, train_size, train_feature_data, k,
-         cluster_size, cluster_start, cluster_bdry,
-         cluster_centroid, cluster_assign);
+  if(DEBUG) {
+    debug_data = read_debug_data();
+
+    printf("\nDEBUG -> Generating KDTree with %d clusters...\n", k);
+    kdtree(debug_dim, debug_size, debug_data, k,
+           cluster_size, cluster_start, cluster_bdry,
+           cluster_centroid, cluster_assign);
+
+    write_results(debug_dim, debug_size, debug_data, cluster_assign);
+  }
+  else {
+    printf("\nGenerating KDTree with %d clusters...\n", k);
+    kdtree(dim, train_size, train_feature_data, k,
+           cluster_size, cluster_start, cluster_bdry,
+           cluster_centroid, cluster_assign);
+  }
 
   printf("\nKDTree clustering complete.\n");
 }
@@ -340,17 +351,13 @@ void execute_bkmeans_j(int data_set, int dim, int k,
   }
 
   if(DEBUG) {
-    int debug_size = 1000000, debug_dim = 2, debug_k = k;
-    double *data = malloc(debug_size * debug_dim * sizeof(double));
-    for(i = 0; i < debug_size * debug_dim; i++) {
-      data[i] = randMToN(0, 1000);
-    }
-    printf("\nForming %d clusters via Bisecting K-means_j...\n", debug_k);
-    num_iterations = bisecting_kmeans(debug_dim, debug_size, data, debug_k, cluster_size,
+    debug_data = read_debug_data();
+    printf("\nDEBUG -> Forming %d clusters via Bisecting K-means_j...\n", k);
+    num_iterations = bisecting_kmeans(debug_dim, debug_size, debug_data, k, cluster_size,
                                       cluster_start, cluster_radius, cluster_centroid,
                                       cluster_assign);
 
-    writeResults(debug_dim, debug_size, data, cluster_assign);
+    write_results(debug_dim, debug_size, debug_data, cluster_assign);
   }
   else {
     printf("\nForming %d clusters via Bisecting K-means_j...\n", k);
@@ -574,7 +581,7 @@ double randMToN(double M, double N)
   return M + (rand() / ( RAND_MAX / (N-M) ) ) ;
 }
 
-void writeResults(int dim, int ndata, double *data, int *cluster_assign)
+void write_results(int dim, int ndata, double *data, int *cluster_assign)
 {
   int i;
   FILE *file;
@@ -592,4 +599,69 @@ void writeResults(int dim, int ndata, double *data, int *cluster_assign)
   }
 
   fclose(file);
+}
+
+Tree execute_debug_LSH()
+{
+  int i, j, debug_m = 6; double debug_w = 18.0;
+
+  double *debug_b = malloc(debug_m * sizeof(double));
+  for(i = 0; i < debug_m; i++) {
+    debug_b[i] = 0.0;
+  }
+
+  double **debug_r = malloc(debug_m * sizeof(double *));
+  for(i = 0; i < debug_m; i++) {
+    debug_r[i] = malloc(debug_dim * sizeof(double));
+  }
+
+  for(i = 0; i < debug_m; i++) {
+    for(j = 0; j < debug_dim; j++) {
+      debug_r[i][j] = gauss_rand();
+    }
+  }
+
+  debug_data = read_debug_data();
+
+  int *debug_cluster_assign = malloc(debug_size * sizeof(debug_cluster_assign));
+  for(i = 0; i < debug_size; i++) {
+    debug_cluster_assign[i] = -1;
+  }
+
+  printf("\nDEBUG -> Generating clusters via LSH...\n");
+  Tree debug_clusters = LSH(debug_dim, debug_size, debug_data, debug_m, debug_r, debug_b, debug_w);
+
+  int debug_cluster_count = get_cluster_count(debug_clusters);
+  write_LSH_clusters_info(debug_clusters, debug_dim, debug_m, debug_w, debug_cluster_count);
+
+  debug_LSH_generate_cluster_assign(debug_cluster_assign, debug_cluster_count);
+
+  write_results(debug_dim, debug_size, debug_data, debug_cluster_assign);
+
+  return debug_clusters;
+}
+
+double* read_debug_data()
+{
+  FILE *file = fopen("../debug_data.txt", "r");
+
+  if(file == NULL) {
+    perror("Error");
+    exit(1);
+  }
+
+  char *data_number = malloc(256 * sizeof(char));
+  double d;
+  double *debug_data = malloc(debug_size * debug_dim * sizeof(double));
+
+  int i;
+  for(i = 0; i < debug_size * debug_dim; i++) {
+    fscanf(file, "%s", data_number);
+    debug_data[i] = strtod(data_number, NULL);
+  }
+
+  free(data_number);
+  fclose(file);
+
+  return debug_data;
 }
